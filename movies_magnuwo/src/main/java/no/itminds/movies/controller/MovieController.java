@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
-import no.itminds.movies.errorhandling.MovieException;
 import no.itminds.movies.service.MovieService;
 
 @Controller
@@ -20,22 +19,14 @@ public class MovieController {
 	@RequestMapping(value = "index")
 	public ModelAndView index() {
 		ModelAndView modelAndView = new ModelAndView("index");
-		try {
-			modelAndView.getModel().put("movies", movieService.getAll());
-		} catch (MovieException mEx) {
-			modelAndView.getModel().put("errorMessage", mEx.getUserMessage());
-		}
+		modelAndView.getModel().put("movies", movieService.getAll());
 		return modelAndView;
 	}
 
 	@RequestMapping(value = "details/{id}", method = RequestMethod.GET)
 	public ModelAndView getDetails(@PathVariable Long id) {
 		ModelAndView modelAndView = new ModelAndView("details");
-		try {
-			modelAndView.getModel().put("movie", movieService.getDetails(id));
-		} catch (MovieException mEx) {
-			modelAndView.getModel().put("errorMessage", mEx.getUserMessage());
-		}
+		modelAndView.getModel().put("movie", movieService.getDetails(id));
 		return modelAndView;
 	}
 }

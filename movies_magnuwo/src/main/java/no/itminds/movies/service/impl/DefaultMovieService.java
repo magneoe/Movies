@@ -24,8 +24,6 @@ public class DefaultMovieService implements MovieService {
 	public Movie getDetails(Long id) {
 		// TODO Auto-generated method stub
 		Movie movie = movieRepo.getOne(id);
-		System.out.println(movie);
 		return movie;
 	}
-	
 }
