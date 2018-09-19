@@ -1,9 +1,9 @@
 package no.itminds.movies.model;
 
 import java.sql.Date;
-import java.util.Collection;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -22,7 +22,7 @@ public class Movie {
 	private Long id;
 	private String title;
 	private String year;
-	@OneToMany
+	@OneToMany(cascade= {CascadeType.ALL})
 	private List<Genre> genres;
 	@ElementCollection(fetch=FetchType.EAGER)
 	 @CollectionTable(
@@ -36,15 +36,22 @@ public class Movie {
 	private double averageRating;
 	private String orginalTitle;
 	private String storyLine;
-	@OneToMany
+	@OneToMany(cascade=CascadeType.PERSIST)
 	private List<Actor> actors;
 	private String imdbRating;
 	private String posterUrl;
 	private String plot;
 	
+	private Date created;
+	
 	public Movie() {}
 	
+	public Movie(Long id) {
+		this.id = id;
+	}
+	
 	public Movie(MovieBuilder builder) {
+		this.id = builder.id;
 		this.title = builder.title;
 		this.year = builder.year;
 		this.genres = builder.genres;
@@ -59,6 +66,7 @@ public class Movie {
 		this.imdbRating = builder.imdbRating;
 		this.posterUrl = builder.posterUrl;
 		this.plot = builder.plot;
+		this.created = builder.createdDate;
 	}
 	
 	public Long getId() {
@@ -177,6 +185,14 @@ public class Movie {
 		this.plot = plot;
 	}
 	
+	public Date getCreated() {
+		return created;
+	}
+
+	public void setCreated(Date created) {
+		this.created = created;
+	}
+
 	@Override
 	public String toString() {
 		return "Movie [id=" + id + ", title=" + title + ", year=" + year + ", genres=" + genres + ", ratings=" + ratings
@@ -187,6 +203,7 @@ public class Movie {
 	}
 
 	public static class MovieBuilder {
+		private Long id;
 		private String title;
 		private String year;
 		private List<Genre> genres;
@@ -201,13 +218,22 @@ public class Movie {
 		private String imdbRating;
 		private String posterUrl;
 		private String plot;
+		private Date createdDate;
 		
+		public MovieBuilder id(Long id) {
+			this.id = id;
+			return this;
+		}
 		public MovieBuilder title(String title) {
 			this.title = title;
 			return this;
 		}
 		public MovieBuilder year(String year) {
 			this.year = year;
+			return this;
+		}
+		public MovieBuilder genres(List<Genre> genres) {
+			this.genres = genres;
 			return this;
 		}
 		public MovieBuilder ratings(List<Integer> ratings) {
@@ -232,10 +258,34 @@ public class Movie {
 			this.averageRating = averageRating;
 			return this;
 		}
-		/*public MovieBuilder averageRating(float averageRating) {
-			this.averageRating = averageRating;
+		public MovieBuilder orginalTitle(String orginalTitle) {
+			this.orginalTitle = orginalTitle;
 			return this;
-		}*/
+		}
+		public MovieBuilder storyLine(String storyLine) {
+			this.storyLine = storyLine;
+			return this;
+		}
+		public MovieBuilder actors(List<Actor> actors) {
+			this.actors = actors;
+			return this;
+		}
+		public MovieBuilder imdbRating(String imdbRating) {
+			this.imdbRating = imdbRating;
+			return this;
+		}
+		public MovieBuilder posterUrl(String posterUrl) {
+			this.posterUrl = posterUrl;
+			return this;
+		}
+		public MovieBuilder plot(String plot) {
+			this.plot = plot;
+			return this;
+		}
+		public MovieBuilder created(Date created) {
+			this.createdDate = created;
+			return this;
+		}
 		public Movie build() {
 			return new Movie(this);
 		}

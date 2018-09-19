@@ -15,6 +15,9 @@
 </head>
 <body>
 	<h1>Details</h1>
+	<c:if test="${error != null}">
+<p style="color:red">${error}</p>
+</c:if>
 	<table style="border:1px">
 		<tr>
 			<th>Title</th>

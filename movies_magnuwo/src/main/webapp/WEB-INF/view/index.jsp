@@ -7,16 +7,14 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Movies</title>
 <style>
-	table, tr, td {
-		border: 1px solid black;
-	}
+table, tr, td {
+	border: 1px solid black;
+}
 </style>
 </head>
 <body>
 	<h1>Movies</h1>
-	<c:if test="${errorMessage}">
-		<p>${errorMessage}</p>
-	</c:if>
+	<p>${errorMessage}</p>
 	<table>
 		<tr>
 			<th>Title</th>
@@ -30,10 +28,24 @@
 				<td>${movie.title}</td>
 				<td>${movie.year}</td>
 				<td>${movie.averageRating}/10</td>
-				<td><img src="${movie.posterUrl}" width="150" alt="poster"/></td>
+				<td><img src="${movie.posterUrl}" width="150" alt="poster" /></td>
 				<td><a href="details/${movie.id }">Details</a></td>
 			</tr>
 		</c:forEach>
 	</table>
+	<c:choose>
+		<c:when test="${username == null }">
+			<a href="/login">Login</a>
+			<a href="/createUser">Create new user</a>
+		</c:when>
+		<c:when test="${username != null }">
+			<p>You are logged in as: ${username}!</p>
+			<form action="/logout" method="POST">
+				<input type="hidden" name="${_csrf.parameterName}"
+					value="${_csrf.token}" />
+				<input type="submit" value="Logout" />
+			</form>
+		</c:when>
+	</c:choose>
 </body>
 </html>

@@ -14,9 +14,7 @@ public class Actor {
 	private String name;
 	
 	public Actor() {}
-	public Actor(Long id, String name) {
-		super();
-		this.id = id;
+	public Actor(String name) {
 		this.name = name;
 	}
 	public Long getId() {
