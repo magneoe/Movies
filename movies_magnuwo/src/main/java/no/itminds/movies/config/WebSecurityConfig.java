@@ -42,14 +42,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		permitAll();
 		
 		
-
 		//Enable h2 login
 		http.csrf().disable();
 		http.headers().frameOptions().disable();
 
 	}
 
-	@Bean
+	@Bean(name="encoder")
 	public BCryptPasswordEncoder encoder() {
 		return new BCryptPasswordEncoder(11);
 	}

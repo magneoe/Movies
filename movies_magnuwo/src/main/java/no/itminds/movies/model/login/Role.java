@@ -1,4 +1,4 @@
-package no.itminds.movies.model;
+package no.itminds.movies.model.login;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

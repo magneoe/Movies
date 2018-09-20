@@ -13,7 +13,7 @@ table, tr, td {
 </style>
 </head>
 <body>
-	<h1>Movies</h1>
+	<h1>Movie DB</h1>
 	<p>${errorMessage}</p>
 	<table>
 		<tr>

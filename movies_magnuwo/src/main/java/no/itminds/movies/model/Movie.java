@@ -1,17 +1,18 @@
 package no.itminds.movies.model;
 
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 
 import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 
 @Entity
@@ -22,27 +23,28 @@ public class Movie {
 	private Long id;
 	private String title;
 	private String year;
-	@OneToMany(cascade= {CascadeType.ALL})
+	@ManyToMany(cascade=CascadeType.PERSIST)
 	private List<Genre> genres;
-	@ElementCollection(fetch=FetchType.EAGER)
-	 @CollectionTable(
-	       name="RATINGS",
-	        joinColumns=@JoinColumn(name="MOVIE_ID")
-	  )
-	private List<Integer> ratings;
+
+	@OneToMany(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval=true)
+	@JoinColumn(name="movie_id")
+	private List<Rating> ratings = new ArrayList<>();
 	private String contentRating;
 	private String duration;
 	private Date releaseDate;
 	private double averageRating;
 	private String orginalTitle;
 	private String storyLine;
-	@OneToMany(cascade=CascadeType.PERSIST)
+	@ManyToMany(cascade=CascadeType.PERSIST)
 	private List<Actor> actors;
 	private String imdbRating;
 	private String posterUrl;
 	private String plot;
 	
 	private Date created;
+	
+	@OneToMany(fetch=FetchType.LAZY, cascade= {CascadeType.PERSIST, CascadeType.MERGE})
+	private List<Comment> comments = new ArrayList<>();
 	
 	public Movie() {}
 	
@@ -51,7 +53,6 @@ public class Movie {
 	}
 	
 	public Movie(MovieBuilder builder) {
-		this.id = builder.id;
 		this.title = builder.title;
 		this.year = builder.year;
 		this.genres = builder.genres;
@@ -67,6 +68,7 @@ public class Movie {
 		this.posterUrl = builder.posterUrl;
 		this.plot = builder.plot;
 		this.created = builder.createdDate;
+		this.comments = builder.comments;
 	}
 	
 	public Long getId() {
@@ -97,11 +99,11 @@ public class Movie {
 		this.genres = genres;
 	}
 
-	public List<Integer> getRatings() {
+	public List<Rating> getRatings() {
 		return ratings;
 	}
 
-	public void setRatings(List<Integer> ratings) {
+	public void setRatings(List<Rating> ratings) {
 		this.ratings = ratings;
 	}
 
@@ -193,21 +195,49 @@ public class Movie {
 		this.created = created;
 	}
 
+	public List<Comment> getComments() {
+		return comments;
+	}
+
+	public void setComments(List<Comment> comments) {
+		this.comments = comments;
+	}
+	public void addComment(Comment comment) {
+		comments.add(comment);
+	}
+	
+	public void addRating(Rating newRating) {
+		ratings.add(newRating);
+	}
+	public void calculateNewAverage() {
+		OptionalDouble avgOpt = ratings.stream().
+				mapToInt(rating -> rating.getRating()).
+				average();
+			if(avgOpt.isPresent()) {
+				averageRating = avgOpt.getAsDouble();
+			}
+	}
+
+	
 	@Override
 	public String toString() {
 		return "Movie [id=" + id + ", title=" + title + ", year=" + year + ", genres=" + genres + ", ratings=" + ratings
 				+ ", contentRating=" + contentRating + ", duration=" + duration + ", releaseDate=" + releaseDate
 				+ ", averageRating=" + averageRating + ", orginalTitle=" + orginalTitle + ", storyLine=" + storyLine
 				+ ", actors=" + actors + ", imdbRating=" + imdbRating + ", posterUrl=" + posterUrl + ", plot=" + plot
-				+ "]";
+				+ ", created=" + created + ", comments=" + comments + "]";
 	}
 
+
+
+
+
+
 	public static class MovieBuilder {
-		private Long id;
 		private String title;
 		private String year;
 		private List<Genre> genres;
-		private List<Integer> ratings;
+		private List<Rating> ratings;
 		private String contentRating;
 		private String duration;
 		private Date releaseDate;
@@ -219,11 +249,8 @@ public class Movie {
 		private String posterUrl;
 		private String plot;
 		private Date createdDate;
+		private List<Comment> comments;
 		
-		public MovieBuilder id(Long id) {
-			this.id = id;
-			return this;
-		}
 		public MovieBuilder title(String title) {
 			this.title = title;
 			return this;
@@ -236,7 +263,7 @@ public class Movie {
 			this.genres = genres;
 			return this;
 		}
-		public MovieBuilder ratings(List<Integer> ratings) {
+		public MovieBuilder ratings(List<Rating> ratings) {
 			this.ratings = ratings;
 			return this;
 		}
@@ -284,6 +311,10 @@ public class Movie {
 		}
 		public MovieBuilder created(Date created) {
 			this.createdDate = created;
+			return this;
+		}
+		public MovieBuilder comments(List<Comment> comments) {
+			this.comments = comments;
 			return this;
 		}
 		public Movie build() {

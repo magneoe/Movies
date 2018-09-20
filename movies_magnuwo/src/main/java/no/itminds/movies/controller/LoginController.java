@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
-import no.itminds.movies.model.User;
+import no.itminds.movies.model.login.User;
 import no.itminds.movies.service.impl.UserServiceImpl;
 
 @Controller
@@ -39,14 +39,14 @@ public class LoginController {
 	}
 	
 	@RequestMapping(value="/loginFailure", method=RequestMethod.POST)
-	public ModelAndView loginFailed(ModelMap modelMap) {
+	public ModelAndView loginFailed() {
 		ModelAndView modelAndView = new ModelAndView("login");
 		modelAndView.addObject("errorMessage", "Authentication failed: wrong username/password");
 		return modelAndView;
 	}
 	
 	@RequestMapping(value="/createUser", method=RequestMethod.GET)
-	public String createUser(ModelMap modelMap) {
+	public String createUser() {
 		return "createUser";
 	}
 	@RequestMapping(value="/createUser", method=RequestMethod.POST)

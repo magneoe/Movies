@@ -11,9 +11,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import no.itminds.movies.model.Role;
-import no.itminds.movies.model.User;
-import no.itminds.movies.model.UserPrincipal;
+import no.itminds.movies.model.login.Role;
+import no.itminds.movies.model.login.User;
+import no.itminds.movies.model.login.UserPrincipal;
 import no.itminds.movies.repository.RoleRepository;
 import no.itminds.movies.repository.UserRepository;
 import no.itminds.movies.service.UserService;

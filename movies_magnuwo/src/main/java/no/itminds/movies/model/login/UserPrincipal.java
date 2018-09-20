@@ -1,4 +1,4 @@
-package no.itminds.movies.model;
+package no.itminds.movies.model.login;
 
 import java.util.ArrayList;
 import java.util.Collection;
