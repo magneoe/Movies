@@ -42,7 +42,6 @@ public class DefaultMovieService implements MovieService {
 			selectedMovie.addComment(newComment);
 			
 			movieRepo.saveAndFlush(selectedMovie);
-			
 		}
 	}
 

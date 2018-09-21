@@ -16,11 +16,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.*;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.ModelAndView;
 
 import no.itminds.movies.controller.MovieController;
 import no.itminds.movies.model.Movie;
+import no.itminds.movies.model.login.User;
 import no.itminds.movies.service.MovieService;
+import no.itminds.movies.service.UserService;
 
 public class MovieControllerTest {
 
@@ -28,6 +33,9 @@ public class MovieControllerTest {
 	private MovieController movieController;
 	@Mock
 	private MovieService movieService;
+	
+	@Mock
+	private UserService userService;
 	
 	@Before
 	public void setup() {
@@ -39,11 +47,21 @@ public class MovieControllerTest {
 		//Arrange
 		List<Movie> moviesMocks = Arrays.asList(new Movie(), new Movie(), new Movie());
 		when(movieService.getAll()).thenReturn(moviesMocks);
+		
+		Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        
+        when(SecurityContextHolder.getContext().getAuthentication().getName()).thenReturn("magneoe@gmail.com");
+		when(userService.findByEmail(any())).thenReturn(new User("magneoe@gmail.com", "secret", "Magnus", "Østeng"));
         
         //Test
 		ModelAndView result = movieController.index();
         Map<String, Object> model = result.getModel();
         verify(movieService).getAll();
+        verify(userService).findByEmail(any());
         
         
         assertTrue(model.containsKey("movies"));

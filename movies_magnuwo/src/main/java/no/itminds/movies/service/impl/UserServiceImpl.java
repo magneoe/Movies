@@ -3,11 +3,12 @@ package no.itminds.movies.service.impl;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import javax.management.relation.RoleNotFoundException;
+import javax.persistence.PersistenceException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,55 +22,42 @@ import no.itminds.movies.service.UserService;
 @Service
 public class UserServiceImpl implements UserService {
 
+	private final static Logger logger = LoggerFactory.getLogger(UserService.class);
+	
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
 	private RoleRepository roleRepository;
 	@Autowired
 	private BCryptPasswordEncoder passwordEncoder;
-	
-	
+
 	@Override
-	public void saveUser(User user) {
-		user.setPassword(passwordEncoder.encode(user.getPassword()));
-		user.setActive(true);
-		
-		Role userRole = null;
+	public void saveUser(User user) throws PersistenceException {
 		try {
-			userRole = roleRepository.findByRole("ADMIN");
+			user.setPassword(passwordEncoder.encode(user.getPassword()));
+			user.setActive(true);
+
+			Role userRole = roleRepository.findByRole("USER");
 			user.setRoles(new HashSet<Role>(Arrays.asList(userRole)));
 			userRepository.saveAndFlush(user);
-		} catch (RoleNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (NullPointerException npEx) {
+			npEx.printStackTrace();
+			throw new PersistenceException("Could not operate on a User object being null");
 		}
-		
 	}
 
 	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+	public UserDetails loadUserByUsername(String username) {
 		return new UserPrincipal(userRepository.findByEmail(username));
 	}
 
 	@Override
 	public User findByEmail(String email) {
-		return userRepository.findByEmail(email);
+		User user = userRepository.findByEmail(email);
+		if (user == null)
+		{
+			logger.debug("FindByEmail: no user exists with email: " + email);
+		}
+		return user;
 	}
-	
-	/*
-	 * Private helper methods
-	 */
-	
-	private void saveDefaultTestuser() {
-		User newUser = new User();
-		newUser.setEmail("magneoe@gmail.com");
-		newUser.setPassword("password");
-		newUser.setFailedLoginAttempts(0);
-		newUser.setActive(true);
-		newUser.setName("Magnus");
-		newUser.setLastname("Østeng");
-		
-		saveUser(newUser);
-	}
-
 }

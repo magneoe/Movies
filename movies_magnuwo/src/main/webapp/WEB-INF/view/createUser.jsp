@@ -14,6 +14,7 @@
 </head>
 <body>
 	<h1>Registration:</h1>
+	<p>${errorMessage}</p>
 <p class="error">
 	<c:forEach items="${formErrors}" var="formError">
 		${formError}<br/>

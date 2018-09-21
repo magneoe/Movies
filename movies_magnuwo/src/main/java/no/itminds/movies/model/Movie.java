@@ -217,6 +217,18 @@ public class Movie {
 				averageRating = avgOpt.getAsDouble();
 			}
 	}
+	
+	public boolean equals(Object obj) {
+		if(!(obj instanceof Movie))
+			return false;
+		Movie m = (Movie)obj;
+		
+		if(!m.getTitle().equals(title))
+			return false;
+		if(!m.getId().equals(id))
+			return false;
+		return true;
+	}
 
 	
 	@Override

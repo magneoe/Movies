@@ -60,9 +60,7 @@ tr {
 </head>
 <body>
 	<h1>Details</h1>
-	<c:if test="${error != null}">
-		<p style="color: red">${error}</p>
-	</c:if>
+	<p style="color:red">${errorMessage}</p>
 	<table style="border: 1px">
 		<tr>
 			<th>Title</th>
@@ -75,7 +73,7 @@ tr {
 		<tr>
 			<td>${movie.title}</td>
 			<td>${movie.year}</td>
-			<td>${movie.averageRating}/10</td>
+			<td>${movie.averageRating}/10<br/>Total of ${movie.ratings.size()} votes</td>
 			<td><img src="${movie.posterUrl}" width="150" alt="poster" /></td>
 			<td>${movie.plot}</td>
 			<td>[<c:forEach items="${movie.actors}" var="actor">

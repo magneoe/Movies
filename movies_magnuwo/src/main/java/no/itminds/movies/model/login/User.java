@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -24,6 +25,7 @@ public class User {
 	
 	@Email(message="Please provide a valid email")
 	@NotEmpty(message="Please provide a email")
+	@Column(unique=true)
 	private String email;
 	
 	@NotEmpty(message="Password can not be empty")
@@ -139,7 +141,10 @@ public class User {
 	public boolean equals(Object obj) {
 		if(!(obj instanceof User))
 			return false;
+		
 		User user = (User) obj;
+		if(user.getId() != getId())
+			return false;
 		if(user.getEmail() != getEmail())
 			return false;
 		return true;

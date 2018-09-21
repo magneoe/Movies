@@ -1,11 +1,17 @@
 package no.itminds.movies.controller;
 
-import java.util.logging.Logger;
+import java.sql.SQLDataException;
 
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -21,14 +27,14 @@ import no.itminds.movies.service.UserService;
 @Controller
 @RequestMapping("movies/")
 public class MovieController {
-
+	
+	final static Logger logger = LoggerFactory.getLogger(MovieController.class);
+	
 	@Autowired
 	private MovieService movieService;
 	
 	@Autowired
 	private UserService userService;
-	
-	protected static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
 	@RequestMapping(value = {"/*", "index"})
 	public ModelAndView index() {
@@ -76,5 +82,26 @@ public class MovieController {
 	private User getCurrentUser() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		return userService.findByEmail(auth.getName());
+	}
+	
+	//Error handling
+	@ExceptionHandler(value= {DataAccessException.class, SQLDataException.class})
+	protected ModelAndView handleDBExceptions(HttpServletRequest req, Exception ex) {
+		final String errorMessage = "Database error: Could not complete the requested operation!";
+		logger.debug(errorMessage);
+		
+		ModelAndView modelAndView = new ModelAndView(req.getRequestURI());
+		modelAndView.getModel().put("errorMessage", errorMessage);
+		return modelAndView;
+	}
+	
+	@ExceptionHandler(value= Exception.class)
+	protected ModelAndView handelExceptions(HttpServletRequest req, Exception ex) {
+		ModelAndView modelAndView = new ModelAndView(req.getRequestURI());
+		final String errorMessage = "Database error: Could not complete the requested operation!";
+		logger.debug(errorMessage);
+		
+		modelAndView.getModel().put("errorMessage", errorMessage);
+		return modelAndView;
 	}
 }
