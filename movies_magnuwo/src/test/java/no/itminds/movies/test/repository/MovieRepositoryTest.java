@@ -47,10 +47,12 @@ public class MovieRepositoryTest {
 	@Rollback(value=true)
 	@Test
 	public void testGetAllMovies() {
+		MovieBuilder builder = new MovieBuilder();
+		builder.plot("Test plot").year("1999").title("Test title");
 		//Given
-		entityManager.merge(new Movie(new Long(1)));
-		entityManager.merge(new Movie(new Long(2)));
-		entityManager.merge(new Movie(new Long(3)));
+		entityManager.persist(builder.build());
+		entityManager.persist(builder.build());
+		entityManager.persist(builder.build());
 		entityManager.flush();
 		
 		//When
@@ -68,6 +70,8 @@ public class MovieRepositoryTest {
 		//Given
 		MovieBuilder builder = new MovieBuilder();
 		builder.title(title);
+		builder.plot("Test plot");
+		builder.year("1995");
 	
 		Movie persistedEntity = entityManager.persistAndFlush(builder.build());
 		

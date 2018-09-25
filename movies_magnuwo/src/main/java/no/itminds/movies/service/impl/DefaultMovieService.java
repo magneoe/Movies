@@ -3,6 +3,10 @@ package no.itminds.movies.service.impl;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.PersistenceException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,24 +20,25 @@ import no.itminds.movies.service.MovieService;
 @Service
 public class DefaultMovieService implements MovieService {
 
+	private static Logger logger = LoggerFactory.getLogger(DefaultMovieService.class);
+	
 	@Autowired
 	private MovieRepository movieRepo;
 	
 	@Override
 	public List<Movie> getAll() {
-		// TODO Auto-generated method stub
 		return movieRepo.findAll();
 	}
 
 	@Override
 	public Movie getDetails(Long id) {
-		// TODO Auto-generated method stub
 		Movie movie = movieRepo.getOne(id);
 		return movie;
 	}
 
 	@Override
-	public void postComment(User existingUser, String title, String comment, Long movieId) {
+	public void postComment(User existingUser, String title, String comment, Long movieId) 
+			throws PersistenceException, IllegalArgumentException {
 		Optional<Movie> selectedMovieOpt = movieRepo.findById(movieId);
 		if(selectedMovieOpt.isPresent()) {
 			Movie selectedMovie = selectedMovieOpt.get();
@@ -43,6 +48,8 @@ public class DefaultMovieService implements MovieService {
 			
 			movieRepo.saveAndFlush(selectedMovie);
 		}
+		else
+			throw new PersistenceException("PersistenceException: The movie does not exist");
 	}
 
 	@Override
@@ -72,6 +79,17 @@ public class DefaultMovieService implements MovieService {
 		if(optRating.isPresent())
 			return optRating.get();
 		return null;
+	}
+
+	@Override
+	public Long save(Movie newMovie) throws PersistenceException {
+		if(newMovie == null)
+		{	
+			logger.debug("Unable to save a newMovie. Reason: null");
+			throw new PersistenceException("Unable to save a newMovie. Reason: null");
+		}
+		newMovie = movieRepo.saveAndFlush(newMovie);
+		return newMovie.getId();
 	}
 	
 	

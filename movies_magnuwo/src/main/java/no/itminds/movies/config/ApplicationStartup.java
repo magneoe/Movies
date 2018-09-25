@@ -19,8 +19,10 @@ import no.itminds.movies.model.Genre;
 import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.model.Rating;
+import no.itminds.movies.model.login.Role;
 import no.itminds.movies.model.login.User;
 import no.itminds.movies.repository.MovieRepository;
+import no.itminds.movies.repository.RoleRepository;
 import no.itminds.movies.repository.UserRepository;
 
 @Component
@@ -32,6 +34,9 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
 
 	@Autowired
 	private UserRepository userRepo;
+	
+	@Autowired
+	private RoleRepository roleRepo;
 
 	@Lazy
 	@Autowired
@@ -42,7 +47,7 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
 
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
-		// Initializing DB
+//		// Initializing DB
 		Genre action = new Genre("Action");
 		Genre comedy = new Genre("Comedy");
 		Genre horror = new Genre("Horror");
@@ -51,9 +56,15 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
 		Actor actor2 = new Actor("Eddie Muprpy");
 		Actor actor3 = new Actor("Uma Thurman");
 
+		Role userRole = null;
+		if((userRole = roleRepo.findByRole("ROLE_USER")) == null) {
+			userRole = new Role("ROLE_USER");
+		}
+		
 		User user1 = null;
 		if ((user1 = userRepo.findByEmail("magneoe@gmail.com")) == null) {
 			user1 = new User("magneoe@gmail.com", encoder.encode("password"), "Magnus", "Østeng");
+			user1.addRole(userRole);
 			entityManager.persist(user1);
 		}
 		Rating rating1 = new Rating(5, user1);

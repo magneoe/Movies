@@ -97,4 +97,19 @@ public class MovieControllerTest {
         Movie actualMovie = (Movie) movieObj;
         assertThat(movieId, is(actualMovie.getId()));
 	}
+	
+	@Test
+	public void testValidateNewMovie() {
+		fail("Not yet implemented");
+	}
+	
+	@Test
+	public void testCreateMovie() {
+		fail("Not yet implemented");
+	}
+	
+	@Test
+	public void testSubmitNewMovie() {
+		fail("Not yet implemented");
+	}
 }

@@ -34,12 +34,15 @@ table, tr, td {
 		</c:forEach>
 	</table>
 	<c:choose>
-		<c:when test="${username == null }">
+		<c:when test="${user == null }">
 			<a href="/login">Login</a>
 			<a href="/createUser">Create new user</a>
 		</c:when>
-		<c:when test="${username != null }">
-			<p>You are logged in as: ${username}!</p>
+		<c:when test="${user != null }">
+			<p>You are logged in as: ${user.name} ${user.lastname}!</p>
+			<c:if test="${user.hasAdminRights()}">
+				<a href="/movies/createMovie">Create movie</a>
+			</c:if>
 			<form action="/logout" method="POST">
 				<input type="hidden" name="${_csrf.parameterName}"
 					value="${_csrf.token}" />

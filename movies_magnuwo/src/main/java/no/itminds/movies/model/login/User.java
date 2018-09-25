@@ -1,7 +1,10 @@
 package no.itminds.movies.model.login;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.function.IntPredicate;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -43,7 +46,7 @@ public class User {
 	private Boolean active;
 	
 	@ManyToMany(fetch=FetchType.EAGER, targetEntity=Role.class, cascade=CascadeType.ALL)
-	private Set<Role> roles;
+	private Set<Role> roles = new HashSet<>();
 	
 	private Timestamp created;
 
@@ -59,7 +62,7 @@ public class User {
 		this.password = password;
 		this.name = name;
 		this.lastname = lastname;
-		this.created = new Timestamp(System.currentTimeMillis());
+		this.created = Timestamp.valueOf(LocalDateTime.now());
 		this.active = true;
 		this.failedLoginAttempts = 0;
 	}
@@ -68,10 +71,6 @@ public class User {
 
 	public Long getId() {
 		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
 	}
 
 	public String getEmail() {
@@ -129,6 +128,9 @@ public class User {
 	public void setRoles(Set<Role> roles) {
 		this.roles = roles;
 	}
+	public void addRole(Role role) {
+		roles.add(role);
+	}
 
 	public Timestamp getCreated() {
 		return created;
@@ -137,6 +139,21 @@ public class User {
 	public void setCreated(Timestamp created) {
 		this.created = created;
 	}
+	
+	/*
+	 * User methods - non get/setters
+	 */
+	public boolean hasAdminRights() {
+		IntPredicate predicateHasAdminAccess = (accessLevel) -> { 
+			if(accessLevel == Role.ACCESS_LEVEL_ADMIN) 
+				return true; 
+			else 
+				return false;};
+		return roles.stream().
+			mapToInt(Role::getAccessLevel).
+			anyMatch(predicateHasAdminAccess);
+	}
+	
 	
 	public boolean equals(Object obj) {
 		if(!(obj instanceof User))

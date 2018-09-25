@@ -1,6 +1,9 @@
 package no.itminds.movies.model;
 
 import java.sql.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
@@ -14,6 +17,10 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.Transient;
+import javax.validation.constraints.NotEmpty;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Entity
 public class Movie {
@@ -21,7 +28,9 @@ public class Movie {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
+	@NotEmpty(message="Title cannot be empty")
 	private String title;
+	@NotEmpty(message="Year cannot be empty")
 	private String year;
 	@ManyToMany(cascade=CascadeType.PERSIST)
 	private List<Genre> genres;
@@ -31,22 +40,32 @@ public class Movie {
 	private List<Rating> ratings = new ArrayList<>();
 	private String contentRating;
 	private String duration;
+	
 	private Date releaseDate;
+	@Transient
+	private String releaseDateDTO;
+	
 	private double averageRating;
 	private String orginalTitle;
 	private String storyLine;
+	
 	@ManyToMany(cascade=CascadeType.PERSIST)
 	private List<Actor> actors;
 	private String imdbRating;
 	private String posterUrl;
+	
+	@NotEmpty(message="Plot cannot be empty")
 	private String plot;
 	
 	private Date created;
+	@Transient
+	private String createdDTOString;
 	
 	@OneToMany(fetch=FetchType.LAZY, cascade= {CascadeType.PERSIST, CascadeType.MERGE})
 	private List<Comment> comments = new ArrayList<>();
 	
-	public Movie() {}
+	public Movie() {
+	}
 	
 	public Movie(Long id) {
 		this.id = id;
@@ -194,6 +213,12 @@ public class Movie {
 	public void setCreated(Date created) {
 		this.created = created;
 	}
+	public void setCreated(String created) throws IllegalArgumentException, DateTimeParseException{
+		this.created = Date.valueOf(LocalDate.parse(created, DateTimeFormatter.ofPattern("dd-mm-yyyy")));
+	}
+	public void setReleaseDate(String releaseDate) throws IllegalArgumentException, DateTimeParseException{
+		this.releaseDate = Date.valueOf(LocalDate.parse(releaseDate, DateTimeFormatter.ofPattern("dd-mm-yyyy")));
+	}
 
 	public List<Comment> getComments() {
 		return comments;
@@ -209,6 +234,23 @@ public class Movie {
 	public void addRating(Rating newRating) {
 		ratings.add(newRating);
 	}
+	
+	public String getReleaseDateDTO() {
+		return releaseDateDTO;
+	}
+
+	public void setReleaseDateDTO(String releaseDateDTO) {
+		this.releaseDateDTO = releaseDateDTO;
+	}
+
+	public String getCreatedDTOString() {
+		return createdDTOString;
+	}
+
+	public void setCreatedDTOString(String createdDTOString) {
+		this.createdDTOString = createdDTOString;
+	}
+
 	public void calculateNewAverage() {
 		OptionalDouble avgOpt = ratings.stream().
 				mapToInt(rating -> rating.getRating()).

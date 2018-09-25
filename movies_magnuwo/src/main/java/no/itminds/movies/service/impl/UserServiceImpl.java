@@ -1,5 +1,7 @@
 package no.itminds.movies.service.impl;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -36,9 +38,10 @@ public class UserServiceImpl implements UserService {
 		try {
 			user.setPassword(passwordEncoder.encode(user.getPassword()));
 			user.setActive(true);
+			user.setCreated(Timestamp.valueOf(LocalDateTime.now()));
 
-			Role userRole = roleRepository.findByRole("USER");
-			user.setRoles(new HashSet<Role>(Arrays.asList(userRole)));
+			Role userRole = roleRepository.findByRole("ROLE_USER");
+			user.addRole(userRole);
 			userRepository.saveAndFlush(user);
 		} catch (NullPointerException npEx) {
 			npEx.printStackTrace();
@@ -60,4 +63,5 @@ public class UserServiceImpl implements UserService {
 		}
 		return user;
 	}
+
 }

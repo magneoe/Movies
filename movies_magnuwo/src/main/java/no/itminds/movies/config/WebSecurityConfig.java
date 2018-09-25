@@ -1,5 +1,7 @@
 package no.itminds.movies.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +17,7 @@ import no.itminds.movies.service.UserService;
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+	private static Logger logger = LoggerFactory.getLogger(WebSecurityConfig.class);
 	@Autowired
 	private UserService userDetailsService;
 	
@@ -28,6 +31,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		authorizeRequests().
 		antMatchers("/", "/movies/index", "/console/**", "/createUser").
 		permitAll().
+		antMatchers("/movies/createMovie", "/movies/newMovie").
+		hasRole("ADMIN").
 		anyRequest().authenticated().
 		and().
 		formLogin().
@@ -41,7 +46,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		logoutSuccessUrl("/").
 		permitAll();
 		
-		
+		logger.debug(http.toString());
 		//Enable h2 login
 		http.csrf().disable();
 		http.headers().frameOptions().disable();
