@@ -1,8 +1,9 @@
 package no.itminds.movies.test.service;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +25,7 @@ import org.mockito.MockitoAnnotations;
 
 import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Movie.MovieBuilder;
+import no.itminds.movies.model.Rating;
 import no.itminds.movies.model.login.User;
 import no.itminds.movies.repository.MovieRepository;
 import no.itminds.movies.service.impl.DefaultMovieService;
@@ -38,10 +40,29 @@ public class MovieServiceTest {
 
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();
+	
+	private User user, user2;
+	
+	private List<Movie> testMovies;
 
 	@Before
 	public void setUp() throws Exception {
 		MockitoAnnotations.initMocks(this);
+		
+		
+		user = new User("magne@gmail.com", "secret", "Bob", "Dyland");
+		user2 = new User("magne@testmail.com", "password", "Harry", "Hole");
+		
+		//Build three movies
+		MovieBuilder builder = new MovieBuilder();
+		
+		Movie movie1 = builder.title("Pulp fiction").year("1999").plot("plot").build();
+		
+		Movie movie2 = builder.title("Comming to America").year("1988").plot("plot2").build();
+		
+		Movie movie3 = builder.title("Kill Bill").year("1960").plot("plot3").build();
+		
+		testMovies = Arrays.asList(movie1, movie2, movie3);
 	}
 
 	@After
@@ -51,20 +72,17 @@ public class MovieServiceTest {
 	@Test
 	public void testGetAll() {
 		// Arrange
-		MovieBuilder builder = new MovieBuilder();
-		builder.title("Title").year("1999").plot("plot");
-		List<Movie> mockMovies = Arrays.asList(builder.build(), builder.build(), builder.build());
-
+		final int TEST_MOVIE_LIST_SIZE = testMovies.size();
 		// When
-		Mockito.when(movieRepo.findAll()).thenReturn(mockMovies);
+		Mockito.when(movieRepo.findAll()).thenReturn(testMovies);
 
 		// Then
 		List<Movie> actualMovies = movieService.getAll();
 		Mockito.verify(movieRepo).findAll();
 
 		assertNotNull(actualMovies);
-		assertNotNull(mockMovies);
-		assertThat(actualMovies.size(), Is.is(mockMovies.size()));
+		assertNotNull(testMovies);
+		assertThat(actualMovies.size(), Is.is(TEST_MOVIE_LIST_SIZE));
 	}
 
 	@Test
@@ -93,7 +111,6 @@ public class MovieServiceTest {
 	public void testPostComment() {
 		// Arrange
 		final Long MOVIE_ID = new Long(1);
-		User newUser = new User("magneoe@gmail.com", "secret", "Magnus", "Østeng");
 		
 		// Expect exception
 		expectedException.expect(PersistenceException.class);
@@ -101,31 +118,128 @@ public class MovieServiceTest {
 
 		// Expect exception
 		expectedException.expect(PersistenceException.class);
-		movieService.postComment(newUser, null, "Test", MOVIE_ID);
+		movieService.postComment(user, null, "Test", MOVIE_ID);
 
 		// Expect exception
 		expectedException.expect(PersistenceException.class);
-		movieService.postComment(newUser, "Test", null, MOVIE_ID);
+		movieService.postComment(user, "Test", null, MOVIE_ID);
 
 		Mockito.when(movieRepo.findById(null)).thenThrow(IllegalArgumentException.class);
 		// Expect exception
 		expectedException.expect(IllegalArgumentException.class);
-		movieService.postComment(newUser, "Test", "Test", null);
+		movieService.postComment(user, "Test", "Test", null);
 	}
 
 	@Test
 	public void testVote() {
-		fail("Not yet implemented");
+		//Arrange
+		final Long MOCK_MOVIE_ID = new Long(10);
+		Movie mockMovie = new Movie(MOCK_MOVIE_ID);
+		mockMovie.setTitle("Pulp fiction");
+		mockMovie.setPlot("Plot");
+		mockMovie.setYear("1955");
+		mockMovie.addRating(new Rating(7, user2));
+		
+		Optional<Movie> movieOpt = Optional.of(mockMovie);
+		
+		/*
+		 * Test 1 - valid input. New user rates a movie
+		 */
+		//When
+		Mockito.when(movieRepo.findById(MOCK_MOVIE_ID)).thenReturn(movieOpt);
+		
+		movieService.vote(user, MOCK_MOVIE_ID, new Integer(4));
+		
+		//Then
+		Mockito.verify(movieRepo).findById(MOCK_MOVIE_ID);
+		Mockito.verify(movieRepo).saveAndFlush(mockMovie);
+		
+		//Check calculated average rating
+		assertEquals(((double)4+7)/2, mockMovie.getAverageRating(), 0);
+		
+		/*
+		 * Test 2 - valid input. Same user rates the movie again with new value
+		 */
+		movieService.vote(user, MOCK_MOVIE_ID, new Integer(9));
+		
+		assertEquals(((double)9+7)/2, mockMovie.getAverageRating(), 0);
+		
+		/*
+		 * Test 3 - invalid input
+		 */
+		expectedException.expect(IllegalArgumentException.class);
+		movieService.vote(null, MOCK_MOVIE_ID, new Integer(9));
+		
+		expectedException.expect(IllegalArgumentException.class);
+		movieService.vote(user, null, new Integer(9));
+		
+		expectedException.expect(IllegalArgumentException.class);
+		movieService.vote(user, MOCK_MOVIE_ID, null);
+
 	}
 
 	@Test
 	public void testGetCurrentRating() {
-		fail("Not yet implemented");
+		//Arrange
+		final Long MOCK_MOVIE_ID = new Long(10);
+		Movie mockMovie = new Movie(MOCK_MOVIE_ID);
+		mockMovie.setTitle("Pulp fiction");
+		mockMovie.setPlot("Plot");
+		mockMovie.setYear("1955");
+		mockMovie.addRating(new Rating(6, user));
+		
+		/*
+		 * Test 1 -valid input
+		 */
+		//When
+		Rating currentRating = movieService.getCurrentRating(user, mockMovie);
+		
+		//Then
+		assertThat(currentRating.getAuthor().getEmail(), Is.is("magne@gmail.com"));
+		assertThat(currentRating.getRating(), Is.is(6));
+		assertNotNull(mockMovie);
+		
+		/*
+		 * Test 2 - invalid input
+		 */
+		currentRating = movieService.getCurrentRating(user, null);
+		
+		assertNull(currentRating);
+		
+		currentRating = movieService.getCurrentRating(null, mockMovie);
+		
+		assertNull(currentRating);
 	}
 
 	@Test
 	public void testSave() {
-		fail("Not yet implemented");
+		
+		//Arrange
+		Movie newMovie = testMovies.get(0);
+		
+		Movie mockMovieOnSaveAndFlush = new Movie(new Long(5));
+		
+		//When
+		Mockito.when(movieRepo.saveAndFlush(newMovie)).thenReturn(mockMovieOnSaveAndFlush);
+		
+		Long id = movieService.save(newMovie);
+		
+		/*
+		 * Test 1 - happy day scenario
+		 */
+		//Then
+		Mockito.verify(movieRepo).saveAndFlush(newMovie);
+		
+		assertThat(id, Is.is(new Long(5)));
+		
+		/*
+		 * Test 2 - invalid input
+		 */
+		
+		expectedException.expect(PersistenceException.class);
+		id = movieService.save(null);
+		assertNull(id);
+		
 	}
 
 }
