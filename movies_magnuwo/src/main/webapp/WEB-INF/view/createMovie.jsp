@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 	<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+	<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -35,11 +36,12 @@
 			<tr>
 				<td>Actors</td>
 				<td>
-					<select name="actors">
+					<!-- <select name="actors">
 						<c:forEach items="${actors}" var="actor">
 							<option value="${actor.id}">${actor.name}</option>
 						</c:forEach>
-					</select>
+					</select> -->
+					<form:checkboxes items="${actors}" path="newMovie.actors" title="Actors:"/>
 				</td>
 			</tr>
 			<tr>
@@ -53,9 +55,9 @@
 				</td>
 			</tr>
 			<tr>
-				<td>Created (YYYY-MM-DD)</td>
+				<td>Created (DD-MM-YYYY)</td>
 				<td>
-					<input type="text" name="createdDTO" value="${newMovie.createdDTOString}"/>
+					<input type="text" name="createdDate" value="${newMovie.createdDate}"/>
 				</td>
 			</tr>
 			<tr>
@@ -89,9 +91,9 @@
 				</td>
 			</tr>
 			<tr>
-				<td>Release date (YYYY-MM-DD)</td>
+				<td>Release date (DD-MM-YYYY)</td>
 				<td>
-					<input type="text" name="releaseDateDTO" value="${newMovie.releaseDateDTO}"/>
+					<input type="text" name="releaseDate" value="${newMovie.releaseDate}"/>
 				</td>
 			</tr>
 			<tr>

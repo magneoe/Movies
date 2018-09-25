@@ -5,7 +5,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalDouble;
 
 import javax.persistence.CascadeType;
@@ -17,10 +19,11 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
-import javax.persistence.Transient;
-import javax.validation.constraints.NotEmpty;
 
-import org.springframework.format.annotation.DateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import no.itminds.movies.model.dto.MovieDTO;
 
 @Entity
 public class Movie {
@@ -28,49 +31,43 @@ public class Movie {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
-	@NotEmpty(message="Title cannot be empty")
 	private String title;
-	@NotEmpty(message="Year cannot be empty")
 	private String year;
-	@ManyToMany(cascade=CascadeType.PERSIST)
+	@ManyToMany(cascade = CascadeType.PERSIST)
 	private List<Genre> genres;
 
-	@OneToMany(fetch=FetchType.LAZY, cascade=CascadeType.ALL, orphanRemoval=true)
-	@JoinColumn(name="movie_id")
+	@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+	@JoinColumn(name = "movie_id")
 	private List<Rating> ratings = new ArrayList<>();
 	private String contentRating;
 	private String duration;
-	
+
 	private Date releaseDate;
-	@Transient
-	private String releaseDateDTO;
-	
+
 	private double averageRating;
 	private String orginalTitle;
 	private String storyLine;
-	
-	@ManyToMany(cascade=CascadeType.PERSIST)
-	private List<Actor> actors;
+
+	@ManyToMany(cascade = {CascadeType.ALL})
+	private List<Actor> actors = new ArrayList<>();
 	private String imdbRating;
 	private String posterUrl;
-	
-	@NotEmpty(message="Plot cannot be empty")
 	private String plot;
-	
+
 	private Date created;
-	@Transient
-	private String createdDTOString;
-	
-	@OneToMany(fetch=FetchType.LAZY, cascade= {CascadeType.PERSIST, CascadeType.MERGE})
+
+	@OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	private List<Comment> comments = new ArrayList<>();
-	
+
 	public Movie() {
+		averageRating = 0;
 	}
-	
+
 	public Movie(Long id) {
 		this.id = id;
+		averageRating = 0;
 	}
-	
+
 	public Movie(MovieBuilder builder) {
 		this.title = builder.title;
 		this.year = builder.year;
@@ -89,7 +86,7 @@ public class Movie {
 		this.created = builder.createdDate;
 		this.comments = builder.comments;
 	}
-	
+
 	public Long getId() {
 		return this.id;
 	}
@@ -120,10 +117,6 @@ public class Movie {
 
 	public List<Rating> getRatings() {
 		return ratings;
-	}
-
-	public void setRatings(List<Rating> ratings) {
-		this.ratings = ratings;
 	}
 
 	public String getContentRating() {
@@ -205,7 +198,7 @@ public class Movie {
 	public void setPlot(String plot) {
 		this.plot = plot;
 	}
-	
+
 	public Date getCreated() {
 		return created;
 	}
@@ -213,10 +206,12 @@ public class Movie {
 	public void setCreated(Date created) {
 		this.created = created;
 	}
-	public void setCreated(String created) throws IllegalArgumentException, DateTimeParseException{
+
+	public void setCreated(String created) throws IllegalArgumentException, DateTimeParseException {
 		this.created = Date.valueOf(LocalDate.parse(created, DateTimeFormatter.ofPattern("dd-mm-yyyy")));
 	}
-	public void setReleaseDate(String releaseDate) throws IllegalArgumentException, DateTimeParseException{
+
+	public void setReleaseDate(String releaseDate) throws IllegalArgumentException, DateTimeParseException {
 		this.releaseDate = Date.valueOf(LocalDate.parse(releaseDate, DateTimeFormatter.ofPattern("dd-mm-yyyy")));
 	}
 
@@ -227,52 +222,36 @@ public class Movie {
 	public void setComments(List<Comment> comments) {
 		this.comments = comments;
 	}
+
 	public void addComment(Comment comment) {
 		comments.add(comment);
 	}
-	
+
 	public void addRating(Rating newRating) {
 		ratings.add(newRating);
 	}
-	
-	public String getReleaseDateDTO() {
-		return releaseDateDTO;
+
+	public static Double calculateNewAverage(List<Rating> ratings) throws IllegalArgumentException {
+		OptionalDouble avgOpt = ratings.stream().mapToDouble(rating -> rating.getRating()).average();
+
+		if (avgOpt.isPresent()) {
+			return avgOpt.getAsDouble();
+		}
+		throw new IllegalArgumentException("Illegal argument: unable to calculate new average");
 	}
 
-	public void setReleaseDateDTO(String releaseDateDTO) {
-		this.releaseDateDTO = releaseDateDTO;
-	}
-
-	public String getCreatedDTOString() {
-		return createdDTOString;
-	}
-
-	public void setCreatedDTOString(String createdDTOString) {
-		this.createdDTOString = createdDTOString;
-	}
-
-	public void calculateNewAverage() {
-		OptionalDouble avgOpt = ratings.stream().
-				mapToInt(rating -> rating.getRating()).
-				average();
-			if(avgOpt.isPresent()) {
-				averageRating = avgOpt.getAsDouble();
-			}
-	}
-	
 	public boolean equals(Object obj) {
-		if(!(obj instanceof Movie))
+		if (!(obj instanceof Movie))
 			return false;
-		Movie m = (Movie)obj;
-		
-		if(!m.getTitle().equals(title))
+		Movie m = (Movie) obj;
+
+		if (!m.getTitle().equals(title))
 			return false;
-		if(!m.getId().equals(id))
+		if (!m.getId().equals(id))
 			return false;
 		return true;
 	}
 
-	
 	@Override
 	public String toString() {
 		return "Movie [id=" + id + ", title=" + title + ", year=" + year + ", genres=" + genres + ", ratings=" + ratings
@@ -281,11 +260,6 @@ public class Movie {
 				+ ", actors=" + actors + ", imdbRating=" + imdbRating + ", posterUrl=" + posterUrl + ", plot=" + plot
 				+ ", created=" + created + ", comments=" + comments + "]";
 	}
-
-
-
-
-
 
 	public static class MovieBuilder {
 		private String title;
@@ -298,82 +272,135 @@ public class Movie {
 		private double averageRating;
 		private String orginalTitle;
 		private String storyLine;
-		private List<Actor> actors;
+		private List<Actor> actors = new ArrayList<>();
 		private String imdbRating;
 		private String posterUrl;
 		private String plot;
 		private Date createdDate;
 		private List<Comment> comments;
-		
+
+		private static Logger logger = LoggerFactory.getLogger(MovieBuilder.class);
+
+		public final static String DATE_PATTERN = "dd-MM-yyyy";
+
 		public MovieBuilder title(String title) {
 			this.title = title;
 			return this;
 		}
+
 		public MovieBuilder year(String year) {
 			this.year = year;
 			return this;
 		}
+
 		public MovieBuilder genres(List<Genre> genres) {
 			this.genres = genres;
 			return this;
 		}
+
 		public MovieBuilder ratings(List<Rating> ratings) {
 			this.ratings = ratings;
 			return this;
 		}
-		
+
 		public MovieBuilder contentRating(String contentRating) {
 			this.contentRating = contentRating;
 			return this;
 		}
-		
+
 		public MovieBuilder duration(String duration) {
 			this.duration = duration;
 			return this;
 		}
+
 		public MovieBuilder releaseDate(Date releaseDate) {
 			this.releaseDate = releaseDate;
 			return this;
 		}
+
 		public MovieBuilder averageRating(float averageRating) {
 			this.averageRating = averageRating;
 			return this;
 		}
+
 		public MovieBuilder orginalTitle(String orginalTitle) {
 			this.orginalTitle = orginalTitle;
 			return this;
 		}
+
 		public MovieBuilder storyLine(String storyLine) {
 			this.storyLine = storyLine;
 			return this;
 		}
+
 		public MovieBuilder actors(List<Actor> actors) {
 			this.actors = actors;
 			return this;
 		}
+
 		public MovieBuilder imdbRating(String imdbRating) {
 			this.imdbRating = imdbRating;
 			return this;
 		}
+
 		public MovieBuilder posterUrl(String posterUrl) {
 			this.posterUrl = posterUrl;
 			return this;
 		}
+
 		public MovieBuilder plot(String plot) {
 			this.plot = plot;
 			return this;
 		}
+
 		public MovieBuilder created(Date created) {
 			this.createdDate = created;
 			return this;
 		}
+
 		public MovieBuilder comments(List<Comment> comments) {
 			this.comments = comments;
 			return this;
 		}
+
+		public MovieBuilder fromMovieDTO(MovieDTO newMovieDTO, List<Actor> actorReferenceList) {
+			title = newMovieDTO.getTitle();
+			year = newMovieDTO.getYear();
+			genres = newMovieDTO.getGenres();
+			contentRating = newMovieDTO.getContentRating();
+			duration = newMovieDTO.getDuration();
+
+			orginalTitle = newMovieDTO.getOrginalTitle();
+			storyLine = newMovieDTO.getStoryLine();
+
+			String[] actorsAsString = newMovieDTO.getActors();
+			for(String actorName : actorsAsString) {
+				Optional<Actor> actorOpt = actorReferenceList.stream().
+						filter(actor -> actor.getName().equals(actorName)).findFirst();
+				if(actorOpt.isPresent()) {
+					this.actors.add(actorOpt.get());
+				}
+			}
+					
+			imdbRating = newMovieDTO.getImdbRating();
+			posterUrl = newMovieDTO.getPosterUrl();
+			plot = newMovieDTO.getPlot();
+			try {
+				releaseDate = Date.valueOf(
+						LocalDate.parse(newMovieDTO.getReleaseDate(), DateTimeFormatter.ofPattern(DATE_PATTERN)));
+				createdDate = Date.valueOf(
+						LocalDate.parse(newMovieDTO.getCreatedDate(), DateTimeFormatter.ofPattern(DATE_PATTERN)));
+			} catch (Exception ex) {
+				logger.info(ex.getMessage());
+			}
+			return this;
+
+		}
+
 		public Movie build() {
 			return new Movie(this);
 		}
+
 	}
-	
+
 }

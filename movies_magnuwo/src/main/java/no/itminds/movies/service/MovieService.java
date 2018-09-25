@@ -13,7 +13,7 @@ public interface MovieService {
 	public List<Movie> getAll();
 	public Movie getDetails(Long id);
 	public void postComment(User existingUser, String title, String comment, Long movieId) throws PersistenceException;
-	public void vote(User existingUser, long movieId, int rating);
+	public void vote(User existingUser, Long movieId, Integer rating) throws IllegalArgumentException, PersistenceException;
 	public Rating getCurrentRating(User currentUser, Movie currentMovie);
 	public Long save(Movie newMovie) throws PersistenceException;
 }

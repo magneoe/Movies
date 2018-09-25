@@ -1,10 +1,15 @@
 package no.itminds.movies.controller;
 
 import java.sql.SQLDataException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -26,9 +32,11 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
 import no.itminds.movies.model.Actor;
-import no.itminds.movies.model.Genre;
+import no.itminds.movies.model.CacheObject;
 import no.itminds.movies.model.Movie;
+import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.model.Rating;
+import no.itminds.movies.model.dto.MovieDTO;
 import no.itminds.movies.model.login.User;
 import no.itminds.movies.repository.ActorRepository;
 import no.itminds.movies.repository.GenreRepository;
@@ -56,6 +64,10 @@ public class MovieController {
 	@Autowired
 	private Validator validator;
 
+	private final String CACHE_ENTRY_GENRES = "CAHCE_ENTRY_GENRES";
+	private final String CACHE_ENTRY_ACTORS = "CAHCE_ENTRY_ACTORS";
+	private static Map<String, CacheObject> cache = new HashMap<>();
+
 	@RequestMapping(value = { "/*", "index" })
 	public ModelAndView index() {
 		ModelAndView modelAndView = new ModelAndView("index");
@@ -70,33 +82,38 @@ public class MovieController {
 
 	@RequestMapping(value = "createMovie", method = RequestMethod.GET)
 	public ModelAndView createMovie() {
-		List<Actor> actors = actorRepository.findAll();
-		Collections.sort(actors);
-
-		List<Genre> genres = genreRepository.findAll();
-		Collections.sort(genres);
 
 		ModelAndView modelAndView = new ModelAndView("createMovie");
-		modelAndView.addObject("actors", actors);
-		modelAndView.addObject("genres", genres);
+		modelAndView.addObject("newMovie", new MovieDTO());
+		modelAndView.addObject("actors", getCachedItems(CACHE_ENTRY_ACTORS, actorRepository));
+		modelAndView.addObject("genres", getCachedItems(CACHE_ENTRY_GENRES, genreRepository));
 
 		return modelAndView;
 	}
 
 	@RequestMapping(value = "newMovie", method = RequestMethod.POST)
-	public ModelAndView submitNewMovie(Movie newMovie) {
-		ModelAndView modelAndView = createMovie();
-		List<Object> formErrors = validateNewMovie(newMovie);
+	public ModelAndView submitNewMovie(MovieDTO newMovieDTO) {
+		ModelAndView modelAndView = new ModelAndView("createMovie");
+		List<Actor> actors = getCachedItems(CACHE_ENTRY_ACTORS, actorRepository);
+		List<Object> formErrors = validateNewMovie(newMovieDTO);
 		// If validation not approved - return
 		if (formErrors.size() > 0) {
+			modelAndView.addObject("actors", actors);
+			modelAndView.addObject("genres", getCachedItems(CACHE_ENTRY_GENRES, genreRepository));
 			modelAndView.addObject("formErrors", formErrors);
-			modelAndView.addObject("newMovie", newMovie);
+			modelAndView.addObject("newMovie", newMovieDTO);
 			return modelAndView;
 		}
 		// If validation approved - persist and return to details view
-		Long id = movieService.save(newMovie);
-		modelAndView.setView(new RedirectView("details/" + id));
-
+		MovieBuilder builder = new MovieBuilder();
+		builder.fromMovieDTO(newMovieDTO, actors);
+		try {
+			Long id = movieService.save(builder.build());
+			modelAndView.setView(new RedirectView("details/" + id));
+		}
+		catch(Exception ex) {
+			modelAndView.addObject("error", "Unable to Create new movie");
+		}
 		return modelAndView;
 	}
 
@@ -124,53 +141,73 @@ public class MovieController {
 	}
 
 	@RequestMapping(value = "vote", method = RequestMethod.POST)
-	public RedirectView vote(int rating, long movieId) {
+	public RedirectView vote(Integer rating, Long movieId) {
 		User existingUser = getCurrentUser();
 		movieService.vote(existingUser, movieId, rating);
 
 		return new RedirectView("details/" + movieId);
 	}
 
+	/*
+	 * Helper methods
+	 */
 	private User getCurrentUser() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		return userService.findByEmail(auth.getName());
 	}
 
-	private List<Object> validateNewMovie(Movie newMovie) {
+	private <T extends Comparable<T>> List<T> getCachedItems(final String CACHE_KEY, JpaRepository<T, Long> repository){
+		CacheObject<T> cacheObj = MovieController.cache.get(CACHE_KEY);
+		
+		if (cacheObj == null || LocalDateTime.now().isAfter(cacheObj.getLastUpdated().plusMinutes(5))) {
+			List<T> cachedItems = repository.findAll();
+			Collections.sort(cachedItems);
+			cache.put(CACHE_KEY, new CacheObject<>(CACHE_KEY, cachedItems));
+			logger.info("Cached objs are being loaded again");
+			return cachedItems;
+		}
+		logger.info("Cached obj is being served from cache");
+		return cacheObj.getCacheItems();
+	}
+
+	public List<Object> validateNewMovie(MovieDTO newMovieDTO) {
 		List<Object> formErrors = new ArrayList<>();
 		// Validate dates
 		try {
-			newMovie.setCreated(newMovie.getCreatedDTOString());
-			newMovie.setReleaseDate(newMovie.getReleaseDateDTO());
+			LocalDate.parse(newMovieDTO.getCreatedDate(), DateTimeFormatter.ofPattern(MovieBuilder.DATE_PATTERN));
+			LocalDate.parse(newMovieDTO.getReleaseDate(), DateTimeFormatter.ofPattern(MovieBuilder.DATE_PATTERN));
 		} catch (Exception ex) {
 			formErrors.add("Illegal date formats");
 		}
-		Set<ConstraintViolation<Movie>> violations = validator.validate(newMovie);
+		Set<ConstraintViolation<MovieDTO>> violations = validator.validate(newMovieDTO);
 		List<Object> violationList = Arrays
 				.asList(violations.stream().map(violation -> violation.getMessage()).toArray());
 		formErrors.addAll(violationList);
-		
+
 		return formErrors;
 	}
 
 	// Error handling
 	@ExceptionHandler(value = { DataAccessException.class, SQLDataException.class })
 	protected ModelAndView handleDBExceptions(HttpServletRequest req, Exception ex) {
-		final String errorMessage = "Database error: Could not complete the requested operation!";
+		final String errorMessage = ex.getMessage();
 		logger.debug(errorMessage);
+		logger.debug(ex.getMessage());
 
-		ModelAndView modelAndView = new ModelAndView(req.getRequestURI());
-		modelAndView.getModel().put("errorMessage", errorMessage);
+		ModelAndView modelAndView = new ModelAndView("error");
+		modelAndView.addObject("errorMessage", errorMessage);
 		return modelAndView;
 	}
 
 	@ExceptionHandler(value = Exception.class)
 	protected ModelAndView handelExceptions(HttpServletRequest req, Exception ex) {
-		ModelAndView modelAndView = new ModelAndView(req.getRequestURI());
-		final String errorMessage = "Database error: Could not complete the requested operation!";
+
+		final String errorMessage = "Error: " + ex.getMessage();
+		logger.debug(ex.getMessage());
 		logger.debug(errorMessage);
 
-		modelAndView.getModel().put("errorMessage", errorMessage);
+		ModelAndView modelAndView = new ModelAndView("error");
+		modelAndView.addObject("errorMessage", errorMessage);
 		return modelAndView;
 	}
 }
