@@ -1,6 +1,5 @@
 package no.itminds.movies.controller;
 
-import java.sql.SQLDataException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,19 +11,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -93,9 +89,11 @@ public class MovieController {
 
 	@RequestMapping(value = "newMovie", method = RequestMethod.POST)
 	public ModelAndView submitNewMovie(MovieDTO newMovieDTO) {
+		
 		ModelAndView modelAndView = new ModelAndView("createMovie");
 		List<Actor> actors = getCachedItems(CACHE_ENTRY_ACTORS, actorRepository);
 		List<Object> formErrors = validateNewMovie(newMovieDTO);
+		
 		// If validation not approved - return
 		if (formErrors.size() > 0) {
 			modelAndView.addObject("actors", actors);
@@ -110,8 +108,9 @@ public class MovieController {
 		try {
 			Long id = movieService.save(builder.build());
 			modelAndView.setView(new RedirectView("details/" + id));
-		}
-		catch(Exception ex) {
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			logger.debug(ex.getMessage());
 			modelAndView.addObject("error", "Unable to Create new movie");
 		}
 		return modelAndView;
@@ -119,11 +118,14 @@ public class MovieController {
 
 	@RequestMapping(value = "details/{id}", method = RequestMethod.GET)
 	public ModelAndView getDetails(@PathVariable Long id) {
-		ModelAndView modelAndView = new ModelAndView("details");
-		Movie currentMovie = movieService.getDetails(id);
-		Rating currentRating = movieService.getCurrentRating(getCurrentUser(), currentMovie);
 
-		modelAndView.getModel().put("movie", currentMovie);
+		ModelAndView modelAndView = new ModelAndView("details");
+		Movie existingMovie = null;
+		existingMovie = movieService.getDetails(id);
+
+		Rating currentRating = movieService.getCurrentRating(getCurrentUser(), existingMovie);
+
+		modelAndView.getModel().put("movie", existingMovie);
 		modelAndView.getModel().put("currentRating", currentRating);
 		return modelAndView;
 	}
@@ -156,9 +158,10 @@ public class MovieController {
 		return userService.findByEmail(auth.getName());
 	}
 
-	private <T extends Comparable<T>> List<T> getCachedItems(final String CACHE_KEY, JpaRepository<T, Long> repository){
+	private <T extends Comparable<T>> List<T> getCachedItems(final String CACHE_KEY,
+			JpaRepository<T, Long> repository) {
 		CacheObject<T> cacheObj = MovieController.cache.get(CACHE_KEY);
-		
+
 		if (cacheObj == null || LocalDateTime.now().isAfter(cacheObj.getLastUpdated().plusMinutes(5))) {
 			List<T> cachedItems = repository.findAll();
 			Collections.sort(cachedItems);
@@ -185,29 +188,5 @@ public class MovieController {
 		formErrors.addAll(violationList);
 
 		return formErrors;
-	}
-
-	// Error handling
-	@ExceptionHandler(value = { DataAccessException.class, SQLDataException.class })
-	protected ModelAndView handleDBExceptions(HttpServletRequest req, Exception ex) {
-		final String errorMessage = ex.getMessage();
-		logger.debug(errorMessage);
-		logger.debug(ex.getMessage());
-
-		ModelAndView modelAndView = new ModelAndView("error");
-		modelAndView.addObject("errorMessage", errorMessage);
-		return modelAndView;
-	}
-
-	@ExceptionHandler(value = Exception.class)
-	protected ModelAndView handelExceptions(HttpServletRequest req, Exception ex) {
-
-		final String errorMessage = "Error: " + ex.getMessage();
-		logger.debug(ex.getMessage());
-		logger.debug(errorMessage);
-
-		ModelAndView modelAndView = new ModelAndView("error");
-		modelAndView.addObject("errorMessage", errorMessage);
-		return modelAndView;
 	}
 }

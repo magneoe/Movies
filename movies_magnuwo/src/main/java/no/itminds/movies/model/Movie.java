@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -245,9 +244,9 @@ public class Movie {
 			return false;
 		Movie m = (Movie) obj;
 
-		if (!m.getTitle().equals(title))
+		if (id != null && !m.getId().equals(id))
 			return false;
-		if (!m.getId().equals(id))
+		if (!m.getTitle().equals(title))
 			return false;
 		return true;
 	}

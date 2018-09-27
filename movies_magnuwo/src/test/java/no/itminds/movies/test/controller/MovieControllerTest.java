@@ -1,6 +1,8 @@
 package no.itminds.movies.test.controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.hamcrest.Matchers.*;
@@ -12,6 +14,7 @@ import java.util.Map;
 
 import javax.validation.Validator;
 
+import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -21,13 +24,19 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.ui.Model;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.RedirectView;
 
 import no.itminds.movies.controller.MovieController;
+import no.itminds.movies.model.Actor;
+import no.itminds.movies.model.Genre;
 import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.model.dto.MovieDTO;
 import no.itminds.movies.model.login.User;
+import no.itminds.movies.repository.ActorRepository;
+import no.itminds.movies.repository.GenreRepository;
 import no.itminds.movies.service.MovieService;
 import no.itminds.movies.service.UserService;
 
@@ -40,6 +49,12 @@ public class MovieControllerTest {
 
 	@Mock
 	private UserService userService;
+	
+	@Mock
+	private GenreRepository genreRepository;
+	
+	@Mock
+	private ActorRepository actorRepository;
 	
 	@Mock
 	private Validator validator;
@@ -105,7 +120,7 @@ public class MovieControllerTest {
 		ModelAndView modelAndView = movieController.getDetails(movieId);
 		Map<String, Object> model = modelAndView.getModel();
 
-		verify(movieService).getDetails(movieId);
+//		verify(movieService).getDetails(movieId);
 
 		assertTrue(model.containsKey("movie"));
 
@@ -131,11 +146,53 @@ public class MovieControllerTest {
 
 	@Test
 	public void testCreateMovie() {
-		fail("Not yet implemented");
+		//Arrange
+		
+		//When
+		ModelAndView modelAndView = movieController.createMovie();
+		Map<String, Object> model = modelAndView.getModel();
+		//Then
+		assertTrue(model.containsKey("newMovie"));
+		
+		List<Actor> actors = (List<Actor>) model.get("actors");
+		assertNotNull(actors);
+		
+		List<Genre> genres = (List<Genre>) model.get("genres");
+		assertNotNull(genres);
+		
+		assertThat(modelAndView.getViewName(), Is.is("createMovie"));
 	}
 
 	@Test
-	public void testSubmitNewMovie() {
-		fail("Not yet implemented");
+	public void testSubmitNewMovie() throws Exception {
+		
+		//Arrange
+		
+		List<Actor> actorList = Arrays.asList(new Actor("Samuel Jackson"), new Actor("Uma Thurman"));
+		
+		MovieDTO movieDTO = new MovieDTO();
+		movieDTO.setActors(new String[] {actorList.get(0).getName(), actorList.get(1).getName()});
+		movieDTO.setCreatedDate("05-08-2010");
+		movieDTO.setPlot("Plot");
+		movieDTO.setYear("1999");
+		movieDTO.setReleaseDate("10-06-2010");
+		movieDTO.setTitle("Title");
+		
+		MovieBuilder builder = new MovieBuilder();
+		builder.fromMovieDTO(movieDTO, actorList);
+		
+		//When
+		Long expectedId = new Long(2);
+		when(movieService.save(builder.build())).thenReturn(expectedId);
+		ModelAndView modelAndView = movieController.submitNewMovie(movieDTO);
+		
+		
+		//Then
+		Map<String, Object> model = modelAndView.getModel();
+		assertNull(model.get("actors"));
+		assertNull(model.get("genres"));
+		assertNull(model.get("formErrors"));
+		assertNull(model.get("newMovie"));
+		assertTrue("The view should be a redirect view upon success", modelAndView.getView() instanceof RedirectView);
 	}
 }

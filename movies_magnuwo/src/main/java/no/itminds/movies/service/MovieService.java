@@ -15,5 +15,5 @@ public interface MovieService {
 	public void postComment(User existingUser, String title, String comment, Long movieId) throws PersistenceException;
 	public void vote(User existingUser, Long movieId, Integer rating) throws IllegalArgumentException, PersistenceException;
 	public Rating getCurrentRating(User currentUser, Movie currentMovie);
-	public Long save(Movie newMovie) throws PersistenceException;
+	public Long save(Movie newMovie) throws Exception;
 }

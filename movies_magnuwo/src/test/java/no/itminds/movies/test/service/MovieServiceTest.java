@@ -4,11 +4,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 
 import org.hamcrest.core.Is;
@@ -23,6 +26,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import no.itminds.movies.exceptions.NotFoundException;
+import no.itminds.movies.model.Comment;
 import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.model.Rating;
@@ -34,6 +39,9 @@ public class MovieServiceTest {
 
 	@Mock
 	private MovieRepository movieRepo;
+	
+	@Mock
+	private EntityManager entityManager;
 
 	@InjectMocks
 	private DefaultMovieService movieService;
@@ -94,12 +102,14 @@ public class MovieServiceTest {
 		mockMovie.setPlot("Plot");
 		mockMovie.setYear("1999");
 		mockMovie.setTitle("Test title");
+		
+		Optional<Movie> mockMovieOpt = Optional.of(mockMovie);
 
 		// When
-		Mockito.when(movieRepo.getOne(ID)).thenReturn(mockMovie);
+		Mockito.when(movieRepo.findById(ID)).thenReturn(mockMovieOpt);
 		// Then
 		Movie actualMovie = movieService.getDetails(ID);
-		Mockito.verify(movieRepo).getOne(ID);
+		Mockito.verify(movieRepo).findById(ID);
 
 		assertNotNull(actualMovie);
 		assertThat(actualMovie, IsEqual.equalTo(mockMovie));
@@ -111,22 +121,35 @@ public class MovieServiceTest {
 	public void testPostComment() {
 		// Arrange
 		final Long MOVIE_ID = new Long(1);
+		Movie mockMovie = new Movie(MOVIE_ID);
+		Optional<Movie> mockMovieOpt = Optional.of(mockMovie);
 		
-		// Expect exception
+		/*
+		 * Test 1 - happy day scenario
+		 */
+		//When 
+		Mockito.when(movieRepo.findById(MOVIE_ID)).thenReturn(mockMovieOpt);
+		Mockito.when(movieRepo.findById(null)).thenThrow(NotFoundException.class);
+		
+		movieService.postComment(user, "Test", "Test2", MOVIE_ID);
+		
+		Comment comment = mockMovie.getComments().get(0);
+		//Then
+		assertNotNull(comment);
+		assertThat(comment.getTitle(), Is.is("Test"));
+		assertThat(comment.getComment(), Is.is("Test2"));
+		assertTrue(LocalDateTime.now().minusMinutes(2).isBefore(comment.getCreated().toLocalDateTime()));
+		
+		/*
+		 * Test 2 - 
+		 */
 		expectedException.expect(PersistenceException.class);
 		movieService.postComment(null, "Test", "Test", MOVIE_ID);
-
-		// Expect exception
-		expectedException.expect(PersistenceException.class);
-		movieService.postComment(user, null, "Test", MOVIE_ID);
-
-		// Expect exception
-		expectedException.expect(PersistenceException.class);
-		movieService.postComment(user, "Test", null, MOVIE_ID);
-
-		Mockito.when(movieRepo.findById(null)).thenThrow(IllegalArgumentException.class);
-		// Expect exception
-		expectedException.expect(IllegalArgumentException.class);
+	
+		/*
+		 * Test 3 - invalid input
+		 */
+		expectedException.expect(NotFoundException.class);
 		movieService.postComment(user, "Test", "Test", null);
 	}
 
@@ -212,7 +235,7 @@ public class MovieServiceTest {
 	}
 
 	@Test
-	public void testSave() {
+	public void testSave() throws Exception{
 		
 		//Arrange
 		Movie newMovie = testMovies.get(0);
@@ -220,7 +243,7 @@ public class MovieServiceTest {
 		Movie mockMovieOnSaveAndFlush = new Movie(new Long(5));
 		
 		//When
-		Mockito.when(movieRepo.saveAndFlush(newMovie)).thenReturn(mockMovieOnSaveAndFlush);
+		Mockito.when(entityManager.merge(newMovie)).thenReturn(mockMovieOnSaveAndFlush);
 		
 		Long id = movieService.save(newMovie);
 		
@@ -228,7 +251,7 @@ public class MovieServiceTest {
 		 * Test 1 - happy day scenario
 		 */
 		//Then
-		Mockito.verify(movieRepo).saveAndFlush(newMovie);
+		Mockito.verify(entityManager).merge(newMovie);
 		
 		assertThat(id, Is.is(new Long(5)));
 		
