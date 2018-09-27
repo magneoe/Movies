@@ -7,8 +7,11 @@
 <title>Error</title>
 </head>
 <body>
+<h1>Ops...something went wrong ;(</h1>
+	<!-- 
 <p>Message: ${errorMessage}</p>
 <p>Status code: ${status}</p>
 <p>Reason: ${message}</p>
+ -->
 </body>
 </html>

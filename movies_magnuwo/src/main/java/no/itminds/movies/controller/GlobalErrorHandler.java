@@ -2,7 +2,6 @@ package no.itminds.movies.controller;
 
 import javax.servlet.http.HttpServletRequest;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -11,8 +10,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
 
 import no.itminds.movies.exceptions.NotFoundException;
-import no.itminds.movies.repository.MovieRepository;
-import no.itminds.movies.service.MovieService;
 
 @ControllerAdvice
 public class GlobalErrorHandler {
@@ -25,7 +22,7 @@ public class GlobalErrorHandler {
 	@ExceptionHandler(NotFoundException.class)
 	public ModelAndView handleNotFoundException(HttpServletRequest request, Exception ex) {
 		final String errorMessage = ex.getMessage();
-		logger.debug(ex.getMessage());
+		logger.debug(ex.getMessage(), ex.getStackTrace().toString());
 
 		ModelAndView modelAndView = new ModelAndView(RESOURCE_NOT_FOUND_VIEW);
 		modelAndView.addObject("errorMessage", errorMessage);
@@ -36,7 +33,7 @@ public class GlobalErrorHandler {
 	@ExceptionHandler(Exception.class)
 	public ModelAndView handleGeneralException(HttpServletRequest request, Exception ex) {
 		final String errorMessage = ex.getMessage();
-		logger.debug(ex.getMessage());
+		logger.debug(ex.getMessage(), ex.getStackTrace().toString());
 
 		ModelAndView modelAndView = new ModelAndView(DEFAULT_ERROR_VIEW);
 		modelAndView.addObject("errorMessage", errorMessage);

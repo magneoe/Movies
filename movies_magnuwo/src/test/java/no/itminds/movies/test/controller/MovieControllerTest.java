@@ -1,17 +1,24 @@
 package no.itminds.movies.test.controller;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.Validation;
 import javax.validation.Validator;
 
 import org.hamcrest.core.Is;
@@ -19,12 +26,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.*;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.ui.Model;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -49,32 +56,23 @@ public class MovieControllerTest {
 
 	@Mock
 	private UserService userService;
-	
+
 	@Mock
 	private GenreRepository genreRepository;
-	
+
 	@Mock
 	private ActorRepository actorRepository;
-	
+
 	@Mock
 	private Validator validator;
 
-	private List<Movie> testMovies;
+	private Validator validatorImpl;
 
 	@Before
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
 
-		// Build three movies
-		MovieBuilder builder = new MovieBuilder();
-
-		Movie movie1 = builder.title("Pulp fiction").year("1999").plot("plot").build();
-
-		Movie movie2 = builder.title("Comming to America").year("1988").plot("plot2").build();
-
-		Movie movie3 = builder.title("Kill Bill").year("1960").plot("plot3").build();
-
-		testMovies = Arrays.asList(movie1, movie2, movie3);
+		validatorImpl = Validation.buildDefaultValidatorFactory().getValidator();
 	}
 
 	@Test
@@ -133,66 +131,130 @@ public class MovieControllerTest {
 	}
 
 	@Test
-	public void testValidateNewMovie() {
+	public void testValidateNewMovie_validInput() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		// Arrange
 		MovieDTO mockMovieDTO = new MovieDTO();
+		mockMovieDTO.setReleaseDate("10-05-1999");
+		mockMovieDTO.setCreatedDate("15-10-1998");
+		mockMovieDTO.setPlot("Plot");
+		mockMovieDTO.setTitle("Title");
+		mockMovieDTO.setYear("1999");
 
 		// When
-		List<Object> formErrors = movieController.validateNewMovie(mockMovieDTO);
+		Method validateNewMovie = MovieController.class.getDeclaredMethod("validateNewMovie", new Class[] {MovieDTO.class});
+		validateNewMovie.setAccessible(true);
+		Object formErrorsObj = validateNewMovie.invoke(movieController, mockMovieDTO);
 
 		// Then
+		assertTrue(formErrorsObj instanceof List<?>);
 		
+		List<String> formErrors = (List) formErrorsObj;
+		assertTrue(formErrors.size() == 0);
+	}
+	@Test
+	public void testValidateNewMovie_InvalidInput() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		// Arrange
+		MovieDTO mockMovieDTO = new MovieDTO();
+		mockMovieDTO.setReleaseDate("45-10-1999");
+		mockMovieDTO.setCreatedDate(null);
+		mockMovieDTO.setPlot(null);
+		mockMovieDTO.setTitle(null);
+		mockMovieDTO.setYear(null);
+
+		// When
+		when(validator.validate(mockMovieDTO)).thenReturn(validatorImpl.validate(mockMovieDTO));
+		
+		Method validateNewMovie = MovieController.class.getDeclaredMethod("validateNewMovie", new Class[] {MovieDTO.class});
+		validateNewMovie.setAccessible(true);
+		Object formErrorsObj = validateNewMovie.invoke(movieController, mockMovieDTO);
+
+		// Then
+		assertTrue(formErrorsObj instanceof List<?>);
+		
+		List<String> formErrors = (List) formErrorsObj;
+		assertEquals("Number of errors reported in the validation should be 4", 4, formErrors.size());
 	}
 
 	@Test
 	public void testCreateMovie() {
-		//Arrange
-		
-		//When
+		// Arrange
+
+		// When
 		ModelAndView modelAndView = movieController.createMovie();
 		Map<String, Object> model = modelAndView.getModel();
-		//Then
+		// Then
 		assertTrue(model.containsKey("newMovie"));
-		
+
 		List<Actor> actors = (List<Actor>) model.get("actors");
 		assertNotNull(actors);
-		
+
 		List<Genre> genres = (List<Genre>) model.get("genres");
 		assertNotNull(genres);
-		
+
 		assertThat(modelAndView.getViewName(), Is.is("createMovie"));
 	}
 
 	@Test
-	public void testSubmitNewMovie() throws Exception {
-		
-		//Arrange
-		
+	public void testSubmitNewMovie_validInput() throws Exception {
+
+		// Arrange
+
 		List<Actor> actorList = Arrays.asList(new Actor("Samuel Jackson"), new Actor("Uma Thurman"));
-		
+
 		MovieDTO movieDTO = new MovieDTO();
-		movieDTO.setActors(new String[] {actorList.get(0).getName(), actorList.get(1).getName()});
+		movieDTO.setActors(new String[] { actorList.get(0).getName(), actorList.get(1).getName() });
 		movieDTO.setCreatedDate("05-08-2010");
 		movieDTO.setPlot("Plot");
 		movieDTO.setYear("1999");
 		movieDTO.setReleaseDate("10-06-2010");
 		movieDTO.setTitle("Title");
-		
+
 		MovieBuilder builder = new MovieBuilder();
 		builder.fromMovieDTO(movieDTO, actorList);
-		
-		//When
+
+		// When
 		Long expectedId = new Long(2);
 		when(movieService.save(builder.build())).thenReturn(expectedId);
 		ModelAndView modelAndView = movieController.submitNewMovie(movieDTO);
-		
-		
-		//Then
+
+		/*
+		 * Test 1 - success scenario
+		 */
+		// Then
 		Map<String, Object> model = modelAndView.getModel();
 		assertNull(model.get("actors"));
 		assertNull(model.get("genres"));
 		assertNull(model.get("formErrors"));
 		assertNull(model.get("newMovie"));
 		assertTrue("The view should be a redirect view upon success", modelAndView.getView() instanceof RedirectView);
+
+	}
+
+	@Test
+	public void testSubmitNewMovie_InvalidInput() {
+
+		// Arrange
+		MovieDTO movieDTO = new MovieDTO();
+		movieDTO.setCreatedDate("2017-10-16"); // Wrong format
+		movieDTO.setReleaseDate(null);
+		movieDTO.setPlot(null);
+		movieDTO.setYear(null);
+		movieDTO.setTitle(null);
+		
+		// When
+		Mockito.when(validator.validate(movieDTO)).thenReturn(validatorImpl.validate(movieDTO));
+		ModelAndView modelAndView = movieController.submitNewMovie(movieDTO);
+		
+		Map<String, Object> model = modelAndView.getModel();
+		Object formErrorsObj = model.get("formErrors");
+		//Then
+		assertTrue(formErrorsObj instanceof List);
+		assertNotNull(model.get("actors"));
+		assertNotNull(model.get("newMovie"));
+		assertNotNull(model.get("genres"));
+		
+		List<?> formErrors = (List<?>) formErrorsObj;
+		assertEquals("Number of errors reported should be 4", 4, formErrors.size());
+		assertThat(modelAndView.getViewName(), Is.is("createMovie"));
 	}
 }

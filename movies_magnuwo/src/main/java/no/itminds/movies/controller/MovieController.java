@@ -173,7 +173,7 @@ public class MovieController {
 		return cacheObj.getCacheItems();
 	}
 
-	public List<Object> validateNewMovie(MovieDTO newMovieDTO) {
+	private List<Object> validateNewMovie(MovieDTO newMovieDTO) {
 		List<Object> formErrors = new ArrayList<>();
 		// Validate dates
 		try {
