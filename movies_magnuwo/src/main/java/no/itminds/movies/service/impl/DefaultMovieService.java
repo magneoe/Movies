@@ -10,6 +10,8 @@ import javax.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import no.itminds.movies.exceptions.NotFoundException;
@@ -35,11 +37,15 @@ public class DefaultMovieService implements MovieService {
 	public List<Movie> getAll() {
 		return movieRepo.findAll();
 	}
+	@Override
+	public Page<Movie> getAll(Pageable pageable) {
+		return movieRepo.findAll(pageable);
+	}
 
 	@Override
 	public Movie getDetails(Long id) {
 		return movieRepo.findById(id)
-				.orElseThrow(() -> new NotFoundException("Movie with id " + id + " is not found", null, id));
+				.orElseThrow(() -> new NotFoundException("Movie with id " + id + " is not found", null, id, Movie.class.getSimpleName()));
 	}
 
 	@Override
@@ -47,7 +53,7 @@ public class DefaultMovieService implements MovieService {
 		if(existingUser == null)
 			throw new PersistenceException("Unable to post a comment without an author");
 		Movie selectedMovie = movieRepo.findById(movieId)
-				.orElseThrow(() -> new NotFoundException("Movie with id " + movieId + " was not found", null, movieId));
+				.orElseThrow(() -> new NotFoundException("Movie with id " + movieId + " was not found", null, movieId, Movie.class.getSimpleName()));
 		Comment newComment = new Comment(title, comment, existingUser);
 		selectedMovie.addComment(newComment);
 
@@ -62,7 +68,7 @@ public class DefaultMovieService implements MovieService {
 
 		try {
 			Movie selectedMovie = movieRepo.findById(movieId).orElseThrow(
-					() -> new NotFoundException("Movie with id " + movieId + " is not found", null, movieId));
+					() -> new NotFoundException("Movie with id " + movieId + " is not found", null, movieId, Movie.class.getSimpleName()));
 			;
 
 			Optional<Rating> optRating = selectedMovie.getRatings().stream().filter(r -> r.getAuthor().equals(author))
@@ -112,4 +118,6 @@ public class DefaultMovieService implements MovieService {
 		newMovie = entityManager.merge(newMovie);
 		return newMovie.getId();
 	}
+
+	
 }

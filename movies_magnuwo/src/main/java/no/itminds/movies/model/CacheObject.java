@@ -3,13 +3,15 @@ package no.itminds.movies.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+
 public class CacheObject<T extends Comparable<T>> {
 
 	private String key;
-	private List<T> cacheItems;
+	private List<Page<T>> cacheItems;
 	private LocalDateTime lastUpdated;
 	
-	public CacheObject(String key, List<T> cacheItems) {
+	public CacheObject(String key, List<Page<T>> cacheItems) {
 		this.key = key;
 		this.cacheItems = cacheItems;
 		lastUpdated = LocalDateTime.now();
@@ -21,10 +23,10 @@ public class CacheObject<T extends Comparable<T>> {
 	public void setKey(String key) {
 		this.key = key;
 	}
-	public List<T> getCacheItems() {
+	public List<Page<T>> getCacheItems() {
 		return cacheItems;
 	}
-	public void setCacheItems(List<T> cacheItems) {
+	public void setCacheItems(List<Page<T>> cacheItems) {
 		this.cacheItems = cacheItems;
 	}
 	public LocalDateTime getLastUpdated() {
