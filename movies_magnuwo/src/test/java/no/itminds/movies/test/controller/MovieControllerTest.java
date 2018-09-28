@@ -160,62 +160,24 @@ public class MovieControllerTest {
 	}
 
 	@Test
-	public void testCreateMovie() {
-//		// Arrange
-//
-//		// When
-//		ModelAndView modelAndView = movieController.createMovie();
-//		Map<String, Object> model = modelAndView.getModel();
-//		// Then
-//		assertTrue(model.containsKey("newMovie"));
-//
-//		List<Actor> actors = (List<Actor>) model.get("actors");
-//		assertNotNull(actors);
-//
-//		List<Genre> genres = (List<Genre>) model.get("genres");
-//		assertNotNull(genres);
-//
-//		assertThat(modelAndView.getViewName(), Is.is("createMovie"));
+	public void testSubmitComment() {
+		
 	}
-
+	
 	@Test
-	public void testValidateNewMovie_validInput() throws Exception {
-
-		// Arrange
+	public void testVote() {
 		
-		
-		//When
-		
-		//Then
-		
-
 	}
-
 	@Test
-	public void testNewMovie_InvalidInput() {
-
-//		// Arrange
-//		MovieDTO movieDTO = new MovieDTO();
-//		movieDTO.setCreatedDate("2017-10-16"); // Wrong format
-//		movieDTO.setReleaseDate(null);
-//		movieDTO.setPlot(null);
-//		movieDTO.setYear(null);
-//		movieDTO.setTitle(null);
-//		
-//		// When
-//		Mockito.when(validator.validate(movieDTO)).thenReturn(validatorImpl.validate(movieDTO));
-//		ModelAndView modelAndView = movieController.submitNewMovie(movieDTO);
-//		
-//		Map<String, Object> model = modelAndView.getModel();
-//		Object formErrorsObj = model.get("formErrors");
-//		//Then
-//		assertTrue(formErrorsObj instanceof List);
-//		assertNotNull(model.get("actors"));
-//		assertNotNull(model.get("newMovie"));
-//		assertNotNull(model.get("genres"));
-//		
-//		List<?> formErrors = (List<?>) formErrorsObj;
-//		assertEquals("Number of errors reported should be 4", 4, formErrors.size());
-//		assertThat(modelAndView.getViewName(), Is.is("createMovie"));
+	public void testComments() {
+		
+	}
+	@Test
+	public void testGetGenres() {
+		
+	}
+	@Test
+	public void testGetActors() {
+		
 	}
 }
