@@ -18,6 +18,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.Transient;
+import javax.validation.constraints.NotEmpty;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +32,9 @@ public class Movie {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
+	@NotEmpty(message="Title cannot be empty")
 	private String title;
+	@NotEmpty(message="Year cannot be empty")
 	private String year;
 	@ManyToMany(cascade = CascadeType.PERSIST)
 	private List<Genre> genres;
@@ -42,7 +46,9 @@ public class Movie {
 	private String duration;
 
 	private Date releaseDate;
-
+	@Transient
+	private String releaseDateString = "";
+	
 	private double averageRating;
 	private String orginalTitle;
 	private String storyLine;
@@ -51,9 +57,12 @@ public class Movie {
 	private List<Actor> actors = new ArrayList<>();
 	private String imdbRating;
 	private String posterUrl;
+	@NotEmpty(message="Plot cannot be empty")
 	private String plot;
 
 	private Date created;
+	@Transient
+	private String createdString = "";
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	private List<Comment> comments = new ArrayList<>();
@@ -230,6 +239,22 @@ public class Movie {
 		ratings.add(newRating);
 	}
 
+	public String getReleaseDateString() {
+		return releaseDateString;
+	}
+
+	public void setReleaseDateString(String releaseDateString) {
+		this.releaseDateString = releaseDateString;
+	}
+
+	public String getCreatedString() {
+		return createdString;
+	}
+
+	public void setCreatedString(String createdString) {
+		this.createdString = createdString;
+	}
+
 	public static Double calculateNewAverage(List<Rating> ratings) throws IllegalArgumentException {
 		OptionalDouble avgOpt = ratings.stream().mapToDouble(rating -> rating.getRating()).average();
 
@@ -354,6 +379,10 @@ public class Movie {
 
 		public MovieBuilder created(Date created) {
 			this.createdDate = created;
+			return this;
+		}
+		public MovieBuilder created(String created) throws DateTimeParseException{
+			this.createdDate = Date.valueOf(LocalDate.parse(created, DateTimeFormatter.ofPattern(DATE_PATTERN)));
 			return this;
 		}
 

@@ -32,6 +32,7 @@ import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.model.Rating;
 import no.itminds.movies.model.login.User;
+import no.itminds.movies.repository.CommentRepository;
 import no.itminds.movies.repository.MovieRepository;
 import no.itminds.movies.service.impl.DefaultMovieService;
 
@@ -39,6 +40,9 @@ public class MovieServiceTest {
 
 	@Mock
 	private MovieRepository movieRepo;
+	
+	@Mock
+	private CommentRepository commentRepo;
 	
 	@Mock
 	private EntityManager entityManager;
@@ -121,7 +125,8 @@ public class MovieServiceTest {
 	public void testPostComment() {
 		// Arrange
 		final Long MOVIE_ID = new Long(1);
-		Movie mockMovie = new Movie(MOVIE_ID);
+		Movie mockMovie = Mockito.spy(new Movie(MOVIE_ID));
+		Comment mockComment = new Comment("TestTitle", "TestComment", user);
 		Optional<Movie> mockMovieOpt = Optional.of(mockMovie);
 		
 		/*
@@ -129,21 +134,23 @@ public class MovieServiceTest {
 		 */
 		//When 
 		Mockito.when(movieRepo.findById(MOVIE_ID)).thenReturn(mockMovieOpt);
+		Mockito.when(commentRepo.saveAndFlush(Mockito.any())).thenReturn(mockComment);
+		Mockito.when(movieRepo.saveAndFlush(mockMovie)).thenReturn(mockMovie);
 		Mockito.when(movieRepo.findById(null)).thenThrow(NotFoundException.class);
 		
-		movieService.postComment(user, "Test", "Test2", MOVIE_ID);
+		Comment comment = movieService.postComment(user, mockComment.getTitle(), mockComment.getComment(), MOVIE_ID);
 		
-		Comment comment = mockMovie.getComments().get(0);
 		//Then
-		assertNotNull(comment);
-		assertThat(comment.getTitle(), Is.is("Test"));
-		assertThat(comment.getComment(), Is.is("Test2"));
+		Mockito.verify(mockMovie).addComment(Mockito.any());
+		assertNotNull("A valid comment should be returned", comment);
+		assertThat(comment.getTitle(), Is.is("TestTitle"));
+		assertThat(comment.getComment(), Is.is("TestComment"));
 		assertTrue(LocalDateTime.now().minusMinutes(2).isBefore(comment.getCreated().toLocalDateTime()));
 		
 		/*
 		 * Test 2 - 
 		 */
-		expectedException.expect(PersistenceException.class);
+		expectedException.expect(IllegalArgumentException.class);
 		movieService.postComment(null, "Test", "Test", MOVIE_ID);
 	
 		/*
@@ -202,7 +209,7 @@ public class MovieServiceTest {
 	}
 
 	@Test
-	public void testGetCurrentRating() {
+	public void testGetCurrentRating_validInput() {
 		//Arrange
 		final Long MOCK_MOVIE_ID = new Long(10);
 		Movie mockMovie = new Movie(MOCK_MOVIE_ID);
@@ -222,14 +229,48 @@ public class MovieServiceTest {
 		assertThat(currentRating.getRating(), Is.is(6));
 		assertNotNull(mockMovie);
 		
+		
+	}
+	@Test
+	public void testGetCurrentRating_invalidInput() {
+		//Arrange
+		final Long MOCK_MOVIE_ID = new Long(10);
+		Movie mockMovie = new Movie(MOCK_MOVIE_ID);
+		mockMovie.setTitle("Pulp fiction");
+		mockMovie.setPlot("Plot");
+		mockMovie.setYear("1955");
+		
+		Rating currentRating;
 		/*
-		 * Test 2 - invalid input
+		 * Test 1 
 		 */
+		expectedException.expect(IllegalArgumentException.class);
 		currentRating = movieService.getCurrentRating(user, null);
 		
 		assertNull(currentRating);
 		
+		/*
+		 * Test 2
+		 */
+		
+		expectedException.expect(IllegalArgumentException.class);
 		currentRating = movieService.getCurrentRating(null, mockMovie);
+		
+		assertNull(currentRating);
+		
+		/*
+		 * Test 3
+		 */
+		
+		currentRating = movieService.getCurrentRating(user, mockMovie);
+		
+		assertNull(currentRating);
+		
+		/*
+		 * Test 4
+		 */
+		mockMovie.addRating(new Rating(6, user2));
+		currentRating = movieService.getCurrentRating(user, mockMovie);
 		
 		assertNull(currentRating);
 	}
@@ -245,7 +286,7 @@ public class MovieServiceTest {
 		//When
 		Mockito.when(entityManager.merge(newMovie)).thenReturn(mockMovieOnSaveAndFlush);
 		
-		Long id = movieService.save(newMovie);
+		Movie persistedMovie = movieService.save(newMovie);
 		
 		/*
 		 * Test 1 - happy day scenario
@@ -253,15 +294,15 @@ public class MovieServiceTest {
 		//Then
 		Mockito.verify(entityManager).merge(newMovie);
 		
-		assertThat(id, Is.is(new Long(5)));
+		assertThat(persistedMovie.getId(), Is.is(new Long(5)));
 		
 		/*
 		 * Test 2 - invalid input
 		 */
 		
-		expectedException.expect(PersistenceException.class);
-		id = movieService.save(null);
-		assertNull(id);
+		expectedException.expect(IllegalArgumentException.class);
+		persistedMovie = movieService.save(null);
+		assertNull(persistedMovie);
 		
 	}
 

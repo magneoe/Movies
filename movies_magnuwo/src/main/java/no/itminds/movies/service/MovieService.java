@@ -7,6 +7,7 @@ import javax.persistence.PersistenceException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import no.itminds.movies.model.Comment;
 import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Rating;
 import no.itminds.movies.model.login.User;
@@ -16,9 +17,9 @@ public interface MovieService {
 	public List<Movie> getAll();
 	public Page<Movie> getAll(Pageable pageable);
 	public Movie getDetails(Long id);
-	public void postComment(User existingUser, String title, String comment, Long movieId) throws PersistenceException;
-	public void vote(User existingUser, Long movieId, Integer rating) throws IllegalArgumentException, PersistenceException;
+	public Comment postComment(User existingUser, String title, String comment, Long movieId) throws PersistenceException;
+	public Movie vote(User existingUser, Long movieId, Integer rating) throws IllegalArgumentException, PersistenceException;
 	public Rating getCurrentRating(User currentUser, Movie currentMovie);
-	public Long save(Movie newMovie) throws Exception;
-	
+	public Movie save(Movie newMovie) throws Exception;
+	public Page<Comment> getComments(Long movieId, Pageable pageable);
 }
