@@ -4,6 +4,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
+import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.After;
 import org.junit.Before;
@@ -46,28 +47,19 @@ public class UserRepositoryTest {
 		/*
 		 * Test1: user exists
 		 */
-		final String email = "magneboll5@hotmail.com";
-		//Arrange
-		User newUser = new User(
-				email, 
-				"password", 
-				"Magnus",
-				"Østeng"
-				);
-		User expectedUser = entityManager.persistAndFlush(newUser);
+		final String EMAIL = "test@gmail.com";
 		
 		//When
-		User actualUser = userRepository.findByEmail(email);
+		User actualUser = userRepository.findByEmail(EMAIL);
 		
 		//Then
 		assertNotNull("Actual user should not be null", actualUser);
-		assertNotNull("Expected user should not be null", expectedUser);
-		assertThat("Excepted and actual user should be the same", actualUser, IsEqual.equalTo(expectedUser));
-		
+		assertThat("Should have firstname Harry", actualUser.getName(), Is.is("Harry"));
+		assertThat("Should have lastname Hole", actualUser.getLastname(), Is.is("Hole"));
+		assertThat("Should have email" + EMAIL, actualUser.getEmail(), Is.is(EMAIL));
 		/*
 		 * Test2: when the user should not exist
 		 */
-		expectedUser = null;
 		
 		actualUser = userRepository.findByEmail("unknownMail");
 		

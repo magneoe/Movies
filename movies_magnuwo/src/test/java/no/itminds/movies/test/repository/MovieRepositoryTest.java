@@ -4,8 +4,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
 
+import java.sql.Date;
 import java.util.List;
 
+import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.After;
 import org.junit.Before;
@@ -35,6 +37,8 @@ public class MovieRepositoryTest {
 	@Autowired
 	private MovieRepository movieRepository;
 	
+	final String MOVIE_TITLE = "Pulp fiction";
+	
 	@Before
 	public void setUp() throws Exception {
 	}
@@ -47,18 +51,13 @@ public class MovieRepositoryTest {
 	@Rollback(value=true)
 	@Test
 	public void testGetAllMovies() {
-		MovieBuilder builder = new MovieBuilder();
-		builder.plot("Test plot").year("1999").title("Test title");
-		//Given
-		entityManager.persist(builder.build());
-		entityManager.persist(builder.build());
-		entityManager.persist(builder.build());
-		entityManager.flush();
-		
 		//When
 		List<Movie> actualMovies = movieRepository.findAll();
 		//Then
 		assertThat("The number of movies should be 3", actualMovies.size(), is(3));
+		assertThat("There should be one movie with title Pulp Fiction", 
+				actualMovies.stream().anyMatch(movie -> movie.getTitle().equals(MOVIE_TITLE)),
+				is(true));
 	}
 	
 	@Transactional
@@ -66,23 +65,13 @@ public class MovieRepositoryTest {
 	@Test
 	public void testFindByTitle()
 	{
-		final String title = "Pulp fiction";
-		//Given
-		MovieBuilder builder = new MovieBuilder();
-		builder.title(title);
-		builder.plot("Test plot");
-		builder.year("1995");
-	
-		Movie persistedEntity = entityManager.persistAndFlush(builder.build());
-		
 		//When
-		Movie actualMovie = movieRepository.findByTitle("Pulp fiction");
+		Movie actualMovie = movieRepository.findByTitle(MOVIE_TITLE);
 		
 		//Then
 		assertNotNull(actualMovie);
-		assertNotNull(persistedEntity);
-		assertThat(actualMovie.getTitle(), IsEqual.equalTo(title));
-		assertThat(actualMovie, IsEqual.equalTo(persistedEntity));
+		assertThat(actualMovie.getTitle(), IsEqual.equalTo(MOVIE_TITLE));
+		assertThat(actualMovie.getReleaseDate().getTime(), IsEqual.equalTo(Date.valueOf("1994-10-21").getTime()));
 		
 	}
 

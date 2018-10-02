@@ -29,9 +29,20 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http.
 		authorizeRequests().
-		antMatchers("/", "/movies/index", "/console/**", "/createUser").
+		antMatchers(
+				"/", 
+				"/index",
+				"/console/**", 
+				"/api/movies/getAll", 
+				"/api/movies/comments",
+				"/api/movies/{\\d+}",
+				"/api/actors/getAll",
+				"/api/genres/getAll",
+				"/api/movies/comments?{*}",
+				"/createUser"
+				).
 		permitAll().
-		antMatchers("/movies/createMovie", "/movies/newMovie").
+		antMatchers("/api/movies/addMovie").
 		hasRole("ADMIN").
 		anyRequest().authenticated().
 		and().

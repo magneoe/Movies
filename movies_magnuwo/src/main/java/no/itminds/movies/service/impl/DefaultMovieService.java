@@ -17,6 +17,8 @@ import no.itminds.movies.exceptions.NotFoundException;
 import no.itminds.movies.model.Comment;
 import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Rating;
+import no.itminds.movies.model.dto.MovieDTO;
+import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.model.login.User;
 import no.itminds.movies.repository.CommentRepository;
 import no.itminds.movies.repository.MovieRepository;
@@ -54,14 +56,14 @@ public class DefaultMovieService implements MovieService {
 
 	@Override
 	public Comment postComment(User existingUser, String title, String comment, Long movieId) {
-		if (existingUser == null)
-			throw new IllegalArgumentException("Unable to post a comment without an author");
+		if (existingUser == null || title == null || comment == null || movieId == null)
+			throw new IllegalArgumentException("Invalid parameters for creating a comment");
 
 		Movie selectedMovie = movieRepo.findById(movieId)
 				.orElseThrow(() -> new NotFoundException("Movie with id " + movieId + " was not found", null, movieId,
 						Movie.class.getSimpleName()));
 		Comment newComment = new Comment(title, comment, existingUser);
-		newComment = commentRepo.saveAndFlush(newComment);
+		newComment = commentRepo.save(newComment);
 		
 		selectedMovie.addComment(newComment);
 		selectedMovie = movieRepo.saveAndFlush(selectedMovie);
@@ -110,15 +112,19 @@ public class DefaultMovieService implements MovieService {
 
 	@Override
 	@Transactional
-	public Movie save(Movie newMovie) {
-		if (newMovie == null) {
-			throw new IllegalArgumentException("Unable to save a newMovie being null");
+	public Movie save(MovieDTO newMovieDTO) {
+		if (newMovieDTO == null) {
+			throw new IllegalArgumentException("Unable to save a new Movie being null");
 		}
+		MovieBuilder builder = new MovieBuilder();
+		Movie newMovie = builder.fromMovieDTO(newMovieDTO).build();
 		return entityManager.merge(newMovie);
 	}
 
 	@Override
 	public Page<Comment> getComments(Long movieId, Pageable pageable) {
+		if(movieId == null)
+			throw new IllegalArgumentException("Movie id null");
 		return movieRepo.getComments(movieId, pageable);
 	}
 }

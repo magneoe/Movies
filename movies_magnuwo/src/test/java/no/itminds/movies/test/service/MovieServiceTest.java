@@ -6,6 +6,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +33,7 @@ import no.itminds.movies.model.Comment;
 import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.model.Rating;
+import no.itminds.movies.model.dto.MovieDTO;
 import no.itminds.movies.model.login.User;
 import no.itminds.movies.repository.CommentRepository;
 import no.itminds.movies.repository.MovieRepository;
@@ -56,14 +59,17 @@ public class MovieServiceTest {
 	private User user, user2;
 	
 	private List<Movie> testMovies;
+	private MovieDTO testDTOMovie;
+	
+	private final Date dateNow = Date.valueOf(LocalDate.now());
 
 	@Before
 	public void setUp() throws Exception {
 		MockitoAnnotations.initMocks(this);
 		
 		
-		user = new User("magne@gmail.com", "secret", "Bob", "Dyland");
-		user2 = new User("magne@testmail.com", "password", "Harry", "Hole");
+		user = new User("test@gmail.com", "secret", "Bob", "Dyland");
+		user2 = new User("test2@testmail.com", "password", "Harry", "Hole");
 		
 		//Build three movies
 		MovieBuilder builder = new MovieBuilder();
@@ -75,6 +81,11 @@ public class MovieServiceTest {
 		Movie movie3 = builder.title("Kill Bill").year("1960").plot("plot3").build();
 		
 		testMovies = Arrays.asList(movie1, movie2, movie3);
+		
+		//Build one DTO movies
+		testDTOMovie = new MovieDTO("Test", "1945", "Something happens", 
+				"Good", "46", "3.6", "testUrl", dateNow, dateNow, null, null, null);
+		
 	}
 
 	@After
@@ -134,7 +145,7 @@ public class MovieServiceTest {
 		 */
 		//When 
 		Mockito.when(movieRepo.findById(MOVIE_ID)).thenReturn(mockMovieOpt);
-		Mockito.when(commentRepo.saveAndFlush(Mockito.any())).thenReturn(mockComment);
+		Mockito.when(commentRepo.save(Mockito.any())).thenReturn(mockComment);
 		Mockito.when(movieRepo.saveAndFlush(mockMovie)).thenReturn(mockMovie);
 		Mockito.when(movieRepo.findById(null)).thenThrow(NotFoundException.class);
 		
@@ -225,7 +236,7 @@ public class MovieServiceTest {
 		Rating currentRating = movieService.getCurrentRating(user, mockMovie);
 		
 		//Then
-		assertThat(currentRating.getAuthor().getEmail(), Is.is("magne@gmail.com"));
+		assertThat(currentRating.getAuthor().getEmail(), Is.is("test@gmail.com"));
 		assertThat(currentRating.getRating(), Is.is(6));
 		assertNotNull(mockMovie);
 		
@@ -276,23 +287,25 @@ public class MovieServiceTest {
 	}
 
 	@Test
-	public void testSave() throws Exception{
+	public void testSave() {
 		
 		//Arrange
-		Movie newMovie = testMovies.get(0);
+		MovieBuilder builder = new MovieBuilder();
+		Movie newMovie = builder.fromMovieDTO(testDTOMovie).build();
 		
-		Movie mockMovieOnSaveAndFlush = new Movie(new Long(5));
+		builder.id(new Long(5));
+		Movie mockMovieOnSaveAndFlush = builder.build();
 		
 		//When
 		Mockito.when(entityManager.merge(newMovie)).thenReturn(mockMovieOnSaveAndFlush);
 		
-		Movie persistedMovie = movieService.save(newMovie);
+		Movie persistedMovie = movieService.save(testDTOMovie);
 		
 		/*
 		 * Test 1 - happy day scenario
 		 */
 		//Then
-		Mockito.verify(entityManager).merge(newMovie);
+		Mockito.verify(entityManager, Mockito.times(1)).merge(newMovie);
 		
 		assertThat(persistedMovie.getId(), Is.is(new Long(5)));
 		

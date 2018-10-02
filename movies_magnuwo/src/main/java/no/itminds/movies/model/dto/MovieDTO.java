@@ -1,40 +1,116 @@
 package no.itminds.movies.model.dto;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.validation.constraints.NotEmpty;
 
-import no.itminds.movies.model.Comment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import no.itminds.movies.model.Actor;
 import no.itminds.movies.model.Genre;
+import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Rating;
 
+@JsonInclude(Include.NON_NULL)
 public class MovieDTO {
-
+	
+	private Long id;
 	
 	@NotEmpty(message="Title cannot be empty")
 	private String title;
 	@NotEmpty(message="Year cannot be empty")
 	private String year;
-	private List<Genre> genres;
-	private List<Rating> ratings = new ArrayList<>();
-	private String contentRating;
-	private String duration;
-	private String releaseDate;
-	private String orginalTitle;
-	private String storyLine;
-	private String[] actors;
-	private String imdbRating;
-	private String posterUrl;
 	@NotEmpty(message="Plot cannot be empty")
 	private String plot;
-	private String createdDate;
-	private List<Comment> comments = new ArrayList<>();
+	
+	private String contentRating;
+	private String duration;
+	private String imdbRating;
+	private String posterUrl;
+	
+	// Formats output date when this DTO is passed through JSON
+    @JsonFormat(pattern = Movie.DATE_TIME_PATTERN)
+	// Allows dd/MM/yyyy date to be passed into GET request in JSON
+    @DateTimeFormat(pattern = Movie.DATE_TIME_PATTERN)
+	private Date createdDate;
+	
+	// Formats output date when this DTO is passed through JSON
+    @JsonFormat(pattern = Movie.DATE_TIME_PATTERN)
+	// Allows dd/MM/yyyy date to be passed into GET request in JSON
+    @DateTimeFormat(pattern = Movie.DATE_TIME_PATTERN)
+	private Date releaseDate;
+	
+	private List<Genre> genres;
+	private List<Actor> actors;
+	private List<Rating> ratings;
+	
+	private static Logger LOGGER = LoggerFactory.getLogger(MovieDTO.class);
 	
 	public MovieDTO() {
-		
+		genres = new ArrayList<>();
+		actors = new ArrayList<>();
+		ratings = new ArrayList<>();
 	}
 
+	public MovieDTO(@NotEmpty(message = "Title cannot be empty") String title,
+			@NotEmpty(message = "Year cannot be empty") String year,
+			@NotEmpty(message = "Plot cannot be empty") String plot, 
+			String contentRating, 
+			String duration,
+			String imdbRating, 
+			String posterUrl, 
+			Date createdDate, 
+			Date releaseDate,
+			List<Genre> genres, 
+			List<Actor> actors,
+			List<Rating> ratings) {
+		super();
+		this.title = title;
+		this.year = year;
+		this.plot = plot;
+		this.contentRating = contentRating;
+		this.duration = duration;
+		this.imdbRating = imdbRating;
+		this.posterUrl = posterUrl;
+		this.createdDate = createdDate;
+		this.releaseDate = releaseDate;
+		this.genres = genres;
+		this.actors = actors;
+		this.ratings = ratings;
+	}
+	
+	public MovieDTO(Movie fromMovie) {
+		super();
+		this.id = fromMovie.getId();
+		this.title = fromMovie.getTitle();
+		this.year = fromMovie.getYear();
+		this.plot = fromMovie.getPlot();
+		this.contentRating = fromMovie.getContentRating();
+		this.duration = fromMovie.getDuration();
+		this.imdbRating = fromMovie.getImdbRating();
+		this.posterUrl = fromMovie.getPosterUrl();
+		this.createdDate = fromMovie.getCreated();
+		this.releaseDate = fromMovie.getReleaseDate();
+		this.genres = fromMovie.getGenres();
+		this.actors = fromMovie.getActors();
+		this.ratings = fromMovie.getRatings();
+	}
+
+
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
 	public String getTitle() {
 		return title;
 	}
@@ -51,20 +127,12 @@ public class MovieDTO {
 		this.year = year;
 	}
 
-	public List<Genre> getGenres() {
-		return genres;
+	public String getPlot() {
+		return plot;
 	}
 
-	public void setGenres(List<Genre> genres) {
-		this.genres = genres;
-	}
-
-	public List<Rating> getRatings() {
-		return ratings;
-	}
-
-	public void setRatings(List<Rating> ratings) {
-		this.ratings = ratings;
+	public void setPlot(String plot) {
+		this.plot = plot;
 	}
 
 	public String getContentRating() {
@@ -83,38 +151,6 @@ public class MovieDTO {
 		this.duration = duration;
 	}
 
-	public String getReleaseDate() {
-		return releaseDate;
-	}
-
-	public void setReleaseDate(String releaseDate) {
-		this.releaseDate = releaseDate;
-	}
-
-	public String getOrginalTitle() {
-		return orginalTitle;
-	}
-
-	public void setOrginalTitle(String orginalTitle) {
-		this.orginalTitle = orginalTitle;
-	}
-
-	public String getStoryLine() {
-		return storyLine;
-	}
-
-	public void setStoryLine(String storyLine) {
-		this.storyLine = storyLine;
-	}
-
-	public String[] getActors() {
-		return actors;
-	}
-
-	public void setActors(String[] actors) {
-		this.actors = actors;
-	}
-
 	public String getImdbRating() {
 		return imdbRating;
 	}
@@ -131,29 +167,127 @@ public class MovieDTO {
 		this.posterUrl = posterUrl;
 	}
 
-	public String getPlot() {
-		return plot;
-	}
-
-	public void setPlot(String plot) {
-		this.plot = plot;
-	}
-
-	public String getCreatedDate() {
+	public Date getCreatedDate() {
 		return createdDate;
 	}
 
-	public void setCreatedDate(String createdDate) {
+	public void setCreatedDate(Date createdDate) {
 		this.createdDate = createdDate;
 	}
 
-	public List<Comment> getComments() {
-		return comments;
+	public Date getReleaseDate() {
+		return releaseDate;
 	}
 
-	public void setComments(List<Comment> comments) {
-		this.comments = comments;
+	public void setReleaseDate(Date releaseDate) {
+		this.releaseDate = releaseDate;
 	}
-	
-	
+
+	public List<Genre> getGenres() {
+		return genres;
+	}
+
+	public void setGenres(List<Genre> genres) {
+		this.genres = genres;
+	}
+
+	public List<Actor> getActors() {
+		return actors;
+	}
+
+	public void setActors(List<Actor> actors) {
+		this.actors = actors;
+	}
+
+	public List<Rating> getRatings() {
+		return ratings;
+	}
+
+	public void setRatings(List<Rating> ratings) {
+		this.ratings = ratings;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MovieDTO other = (MovieDTO) obj;
+		if (actors == null) {
+			if (other.actors != null)
+				return false;
+		} else if (!actors.equals(other.actors))
+			return false;
+		if (contentRating == null) {
+			if (other.contentRating != null)
+				return false;
+		} else if (!contentRating.equals(other.contentRating))
+			return false;
+		if (createdDate == null) {
+			if (other.createdDate != null)
+				return false;
+		} else if (!createdDate.equals(other.createdDate))
+			return false;
+		if (duration == null) {
+			if (other.duration != null)
+				return false;
+		} else if (!duration.equals(other.duration))
+			return false;
+		if (genres == null) {
+			if (other.genres != null)
+				return false;
+		} else if (!genres.equals(other.genres))
+			return false;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		if (imdbRating == null) {
+			if (other.imdbRating != null)
+				return false;
+		} else if (!imdbRating.equals(other.imdbRating))
+			return false;
+		if (plot == null) {
+			if (other.plot != null)
+				return false;
+		} else if (!plot.equals(other.plot))
+			return false;
+		if (posterUrl == null) {
+			if (other.posterUrl != null)
+				return false;
+		} else if (!posterUrl.equals(other.posterUrl))
+			return false;
+		if (ratings == null) {
+			if (other.ratings != null)
+				return false;
+		} else if (!ratings.equals(other.ratings))
+			return false;
+		if (releaseDate == null) {
+			if (other.releaseDate != null)
+				return false;
+		} else if (!releaseDate.equals(other.releaseDate))
+			return false;
+		if (title == null) {
+			if (other.title != null)
+				return false;
+		} else if (!title.equals(other.title))
+			return false;
+		if (year == null) {
+			if (other.year != null)
+				return false;
+		} else if (!year.equals(other.year))
+			return false;
+		return true;
+	}
+	@Override
+	public String toString() {
+		return "MovieDTO [title=" + title + ", year=" + year + ", plot=" + plot + ", contentRating=" + contentRating
+				+ ", duration=" + duration + ", imdbRating=" + imdbRating + ", posterUrl=" + posterUrl
+				+ ", createdDate=" + createdDate + ", releaseDate=" + releaseDate + ", genres=" + genres + ", actors="
+				+ actors + ", ratings=" + ratings + "]";
+	}
 }
