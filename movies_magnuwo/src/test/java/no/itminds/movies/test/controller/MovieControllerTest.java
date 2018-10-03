@@ -287,7 +287,7 @@ public class MovieControllerTest {
 		// When
 
 		when(movieService.getComments(MOVIE_ID, PAGEABLE)).thenReturn(EXPECTED_COMMENT_PAGE);
-		final Page<Comment> ACTUAL_COMMENT_PAGE = movieController.comments(MOVIE_ID, PAGEABLE);
+		final Page<CommentDTO> ACTUAL_COMMENT_PAGE = movieController.comments(MOVIE_ID, PAGEABLE);
 		// Then
 
 		Mockito.verify(movieService).getComments(MOVIE_ID, PAGEABLE);

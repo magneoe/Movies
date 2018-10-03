@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 
 import no.itminds.movies.service.UserService;
 
@@ -21,6 +22,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	private UserService userDetailsService;
 	
+	@Autowired
+	private CustomAuthenticationSuccessHandler restApiSuccessHandler;
+	
+	@Autowired
+	private SimpleUrlAuthenticationFailureHandler restApiFailureHandler;
 	
 	protected void configure(AuthenticationManagerBuilder authBuilder) throws Exception {
 		authBuilder.userDetailsService(userDetailsService).passwordEncoder(encoder());
@@ -30,14 +36,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		http.
 		authorizeRequests().
 		antMatchers(
-				"/", 
-				"/index",
+				"/",
+				"/static/**",
+				"/login",
 				"/console/**", 
 				"/api/movies/getAll", 
 				"/api/movies/comments",
+				"/api/genres/getAll",
 				"/api/movies/{\\d+}",
 				"/api/actors/getAll",
-				"/api/genres/getAll",
 				"/api/movies/comments?{*}",
 				"/createUser"
 				).
@@ -47,14 +54,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		anyRequest().authenticated().
 		and().
 		formLogin().
-		loginPage("/login").
-		defaultSuccessUrl("/movies/index").
-		failureForwardUrl("/loginFailure").
+		successHandler(restApiSuccessHandler).
+		failureHandler(restApiFailureHandler).
 		permitAll().
 		and().
 		logout().
-		logoutUrl("/logout").
-		logoutSuccessUrl("/").
 		permitAll();
 		
 		logger.debug(http.toString());
@@ -68,4 +72,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	public BCryptPasswordEncoder encoder() {
 		return new BCryptPasswordEncoder(11);
 	}
+	@Bean
+    public CustomAuthenticationSuccessHandler restApiSuccessHandler(){
+        return new CustomAuthenticationSuccessHandler();
+    }
+    @Bean
+    public SimpleUrlAuthenticationFailureHandler restApiFailureHandler(){
+        return new SimpleUrlAuthenticationFailureHandler();
+    }
 }

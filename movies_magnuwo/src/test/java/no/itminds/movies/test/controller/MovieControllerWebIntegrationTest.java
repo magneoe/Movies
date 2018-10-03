@@ -60,7 +60,6 @@ public class MovieControllerWebIntegrationTest {
 	public void setUp() throws Exception {
 
 		JacksonTester.initFields(this, mapper);
-//		mapper.
 	}
 
 	@After

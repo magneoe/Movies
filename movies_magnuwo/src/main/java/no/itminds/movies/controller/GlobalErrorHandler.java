@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -21,12 +22,23 @@ public class GlobalErrorHandler {
 
 	private static Logger logger = LoggerFactory.getLogger(GlobalErrorHandler.class);
 	
+	@ExceptionHandler(value= MissingServletRequestParameterException.class)
+	protected ResponseEntity<ErrorResponse> handleMissingParameterException(MissingServletRequestParameterException msrex, HttpServletRequest request){
+		msrex.printStackTrace();
+		logger.warn(msrex.getMessage());
+		
+		final String errorMessage = String.format("Missing parameter: " + msrex.getParameterName() + " of type: " + msrex.getParameterType());
+		ErrorResponse error = new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), errorMessage, request.getRequestURI());
+
+		return new ResponseEntity<ErrorResponse>(error, HttpStatus.BAD_REQUEST);
+	}
+	
 	@ExceptionHandler(value = {MethodArgumentTypeMismatchException.class, IllegalArgumentException.class})
-	protected ResponseEntity<?> handleInvalidMethodArgument(RuntimeException rex, HttpServletRequest request){
+	protected ResponseEntity<ErrorResponse> handleInvalidMethodArgument(RuntimeException rex, HttpServletRequest request){
 		rex.printStackTrace();
 		logger.warn(rex.getMessage());
 		
-		final String errorMessage = String.format("Invalid parameters provided");
+		final String errorMessage = String.format("Invalid parameters provided:" + rex.getMessage());
 		ErrorResponse error = new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), errorMessage, request.getRequestURI());
 
 		return new ResponseEntity<ErrorResponse>(error, HttpStatus.BAD_REQUEST);
