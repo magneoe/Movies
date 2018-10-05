@@ -14,9 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -83,7 +81,7 @@ public class MovieController {
 	 * @return {@link Page} containing a page of Movies.
 	 */
 	@GetMapping(value = "movies/getAll")
-	public Page<MovieDTO> getMovies(@PageableDefault(page = 0, size = 10) Pageable pageable) {
+	public Page<MovieDTO> getMovies(@PageableDefault(page = 0, size = 10, sort="title") Pageable pageable) {
 		Page<Movie> moviePage = movieService.getAll(pageable);
 		return moviePage.map(movie -> new MovieDTO(movie));
 	}

@@ -114,7 +114,7 @@ public class MovieControllerTest {
 		
 		//Test DTO
 		testDTOMovie = new MovieDTO("Test", "1945", "Something happens", 
-				"Good", "46", "3.6", "testUrl", dateNow, dateNow, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+				"Good", "46", "3.6", "testUrl", dateNow, dateNow, 5.0, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 	}
 
 	@Test
@@ -251,7 +251,7 @@ public class MovieControllerTest {
 		Mockito.verify(movieService, Mockito.times(1)).vote(testUser, EXPECTED_MOVIE.getId(), RATING);
 
 		
-		assertTrue("Should return updated Movie", EXPECTED_MOVIE_DTO.equals(responseEntity.getBody()));
+		assertEquals("Should return updated Movie", EXPECTED_MOVIE_DTO, responseEntity.getBody());
 		assertEquals("Should return HttpStatus OK", HttpStatus.OK, responseEntity.getStatusCode());
 	}
 

@@ -383,7 +383,7 @@ public class Movie {
 			plot = newMovieDTO.getPlot();
 			releaseDate = newMovieDTO.getReleaseDate();
 			createdDate = newMovieDTO.getCreatedDate();
-			
+			averageRating = newMovieDTO.getAverageRating();
 			return this;
 
 		}

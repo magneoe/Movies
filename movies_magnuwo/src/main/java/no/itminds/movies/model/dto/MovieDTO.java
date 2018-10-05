@@ -30,7 +30,7 @@ public class MovieDTO {
 	private String year;
 	@NotEmpty(message="Plot cannot be empty")
 	private String plot;
-	
+	 
 	private String contentRating;
 	private String duration;
 	private String imdbRating;
@@ -47,6 +47,8 @@ public class MovieDTO {
 	// Allows dd/MM/yyyy date to be passed into GET request in JSON
     @DateTimeFormat(pattern = Movie.DATE_TIME_PATTERN)
 	private Date releaseDate;
+    
+    private double averageRating;
 	
 	private List<Genre> genres;
 	private List<Actor> actors;
@@ -69,6 +71,7 @@ public class MovieDTO {
 			String posterUrl, 
 			Date createdDate, 
 			Date releaseDate,
+			double averageRating,
 			List<Genre> genres, 
 			List<Actor> actors,
 			List<Rating> ratings) {
@@ -85,6 +88,7 @@ public class MovieDTO {
 		this.genres = genres;
 		this.actors = actors;
 		this.ratings = ratings;
+		this.averageRating = averageRating;
 	}
 	
 	public MovieDTO(Movie fromMovie) {
@@ -102,6 +106,7 @@ public class MovieDTO {
 		this.genres = fromMovie.getGenres();
 		this.actors = fromMovie.getActors();
 		this.ratings = fromMovie.getRatings();
+		this.averageRating = fromMovie.getAverageRating();
 	}
 
 
@@ -207,6 +212,14 @@ public class MovieDTO {
 		this.ratings = ratings;
 	}
 
+	public double getAverageRating() {
+		return averageRating;
+	}
+
+	public void setAverageRating(double averageRating) {
+		this.averageRating = averageRating;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -220,6 +233,8 @@ public class MovieDTO {
 			if (other.actors != null)
 				return false;
 		} else if (!actors.equals(other.actors))
+			return false;
+		if (Double.doubleToLongBits(averageRating) != Double.doubleToLongBits(other.averageRating))
 			return false;
 		if (contentRating == null) {
 			if (other.contentRating != null)
@@ -283,11 +298,12 @@ public class MovieDTO {
 			return false;
 		return true;
 	}
+
 	@Override
 	public String toString() {
-		return "MovieDTO [title=" + title + ", year=" + year + ", plot=" + plot + ", contentRating=" + contentRating
-				+ ", duration=" + duration + ", imdbRating=" + imdbRating + ", posterUrl=" + posterUrl
-				+ ", createdDate=" + createdDate + ", releaseDate=" + releaseDate + ", genres=" + genres + ", actors="
-				+ actors + ", ratings=" + ratings + "]";
+		return "MovieDTO [id=" + id + ", title=" + title + ", year=" + year + ", plot=" + plot + ", contentRating="
+				+ contentRating + ", duration=" + duration + ", imdbRating=" + imdbRating + ", posterUrl=" + posterUrl
+				+ ", createdDate=" + createdDate + ", releaseDate=" + releaseDate + ", averageRating=" + averageRating
+				+ ", genres=" + genres + ", actors=" + actors + ", ratings=" + ratings + "]";
 	}
 }

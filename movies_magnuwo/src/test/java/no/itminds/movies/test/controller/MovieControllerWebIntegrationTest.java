@@ -116,7 +116,7 @@ public class MovieControllerWebIntegrationTest {
 	public void testAddMovie() throws Exception {
 
 		final MovieDTO SUBMITTED_MOVIE_DTO = new MovieDTO("NewAndExcitingTitle", "1956", "SuperPlot", "Good", "180",
-				"9.1", "testUrl", dateNow, dateNow, null, null, null);
+				"9.1", "testUrl", dateNow, dateNow, 4.0, null, null, null);
 
 		String SUBMITTED_MOVIE_JSON = jsonTesterMovieDTO.write(SUBMITTED_MOVIE_DTO).getJson();
 

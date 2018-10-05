@@ -84,7 +84,7 @@ public class MovieServiceTest {
 		
 		//Build one DTO movies
 		testDTOMovie = new MovieDTO("Test", "1945", "Something happens", 
-				"Good", "46", "3.6", "testUrl", dateNow, dateNow, null, null, null);
+				"Good", "46", "3.6", "testUrl", dateNow, dateNow, 3.0, null, null, null);
 		
 	}
 
