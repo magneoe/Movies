@@ -13,9 +13,7 @@
     height: auto;
     font-size: 12px;
 }
-.tileContainer:hover {
-    cursor: pointer;
-}
+
 .tilePropertyContainer {
     overflow: hidden;
     max-width: 50%;
@@ -27,10 +25,16 @@
     font-size: 13px;
     font-weight: bold;
 }
+
 .tileTitle {
     font-size: 15px;
 }
-
+.tileTitle:hover {
+    cursor: pointer;
+}
 .posterContainer {
     overflow: hidden;
+}
+.posterContainer:hover {
+    cursor: pointer;
 }

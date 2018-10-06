@@ -89,7 +89,7 @@ class MovieDB extends Component {
 }
 
 export default connect(
-    (state, ownProps) => ({
+    (state) => ({
         requestConfig: state.movieReducer.requestConfig,
         movieData: state.movieReducer.movieData,
         loading: state.movieReducer.loading,
