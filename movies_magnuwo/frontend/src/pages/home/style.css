@@ -1,6 +1,16 @@
+.movieListContainer {
+  margin: 15px;
+  display: flex; 
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 300px;
+}
+
 .lds-roller {
+    align-self: center;
     display: inline-block;
     /*position: relative;*/
+    margin-top: 50px;
     width: 64px;
     height: 64px;
   }

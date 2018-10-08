@@ -7,7 +7,7 @@ const Header = (props) => {
     return(
         <div className="jumbotron jumbotron-fluid headerStyle">
           <div className="container">
-            <h1 className="display-5 headerTitle">MovieDB</h1>
+            <h1 className="display-4 headerTitle">MovieDB</h1>
             <p className="lead headerLead"><i>A slightly more serious movie database than the average</i></p>
           </div>
         </div>

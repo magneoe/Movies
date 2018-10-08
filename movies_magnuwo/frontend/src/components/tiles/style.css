@@ -9,14 +9,14 @@
     align-items: center;
     flex-wrap: nowrap;
     border: 1px solid #4d4d4d;
-    width: 300px;
+    width: 350px;
     height: auto;
     font-size: 12px;
 }
 
 .tilePropertyContainer {
     overflow: hidden;
-    max-width: 50%;
+    max-width: 55%;
     height: 100%;
     text-align: left;
 }
@@ -37,4 +37,13 @@
 }
 .posterContainer:hover {
     cursor: pointer;
+}
+.posterImg {
+    width: 150px;
+    padding: 10px;
+}
+.ratingContainer {  
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between; 
 }

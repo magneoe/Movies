@@ -3,7 +3,6 @@ import { MovieTile } from './tiles/MovieTile';
 import { PageSort } from './pageSupport/PageSort';
 import { PageInfo } from './pageSupport/PageInfo';
 import {MovieList} from './lists/MovieList';
-import {FullSymbol, EmptySymbol} from './rating/symbol';
 
 export {
     MovieModal,
@@ -11,6 +10,4 @@ export {
     PageInfo,
     PageSort,
     MovieList,
-    FullSymbol,
-    EmptySymbol
 }

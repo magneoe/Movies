@@ -3,10 +3,11 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
 import { loadMovies, SORT_OPTIONS } from './actions';
+import {login} from '../login/actions';
 import { MovieModal, PageSort, PageInfo, MovieList } from '../../components';
 import './style.css';
 
-
+import {vote, getAllActors} from '../../api/movieDB-lib';
 
 class MovieDB extends Component {
     constructor(props){
@@ -19,6 +20,7 @@ class MovieDB extends Component {
     componentDidMount() {
         const { size, direction, sort } = this.props.requestConfig || {};
         this.props.actions.loadMovies(0, size, sort, direction);
+        console.log(getAllActors());
     }
     onMovieClicked = (movieId) => {
         console.log("Movie clicked:", movieId);
@@ -71,7 +73,7 @@ class MovieDB extends Component {
                     sortOptions={SORT_OPTIONS}
                     onChangedSortOption={this.onChangedSortOption}
                 />
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+                <div className="movieListContainer">
                     {
                         loading ?
                             <div className="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
@@ -96,6 +98,7 @@ export default connect(
     }),
     (dispatch) => ({
         actions: bindActionCreators(Object.assign({},
-            { loadMovies }), dispatch)
+            { loadMovies, login }), dispatch)
+
     })
 )(MovieDB)

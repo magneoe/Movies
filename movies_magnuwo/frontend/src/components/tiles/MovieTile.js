@@ -3,7 +3,7 @@ import StarRatingComponent from 'react-star-rating-component';
 
 import './style.css';
 
-
+ 
 export class MovieTile extends Component {
 
     render() {
@@ -42,28 +42,27 @@ export class MovieTile extends Component {
                                 <td>{actorsView}</td>
                             </tr>
                             <tr>
-                                <td><span className="tileHeader">Rating:</span></td>
-                                <td>{averageRating}/10</td>
+                                <td colSpan="2"><span className="tileHeader">Avg. rating:</span></td>
                             </tr>
                             <tr>
                                 <td colSpan="2">
+                                    <div className="ratingContainer">
                                    <StarRatingComponent
-                                    style={{zIndex: 2}}
-                                    name="test"
+                                    name="avgRating"
                                     value={averageRating} /* number of selected icon (`0` - none, `1` - first) */
                                     starCount={10} /* number of icons in rating, default `5` */
-                                    onStarClick={(e, a, b)=>{console.log(e);}} /* on icon click handler */
-                                    starColor={"#ffb400"} /* color of selected icons, default `#ffb400` */
-                                    emptyStarColor="#fff" /* color of non-selected icons, default `#333` */
+                                    emptyStarColor="#e6e6e6" /* color of non-selected icons, default `#333` */
                                     editing={false} /* is component available for editing, default `true` */
                                    />
+                                   <span>({averageRating}/10)</span>
+                                   </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div onClick={onClick} className="posterContainer">
-                    <img alt="Movie poster" src={posterUrl} width="120px" />
+                    <img alt="Movie poster" src={posterUrl} className="posterImg" />
                 </div>
             </div>
         );

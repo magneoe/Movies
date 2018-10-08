@@ -35,5 +35,5 @@
     "bootstrap": "^4.1.3",
     "redux-devtools": "^3.4.1"
   },
-  "proxy": "http://localhost:8082/api"
+  "proxy": "http://localhost:8082"
 }
