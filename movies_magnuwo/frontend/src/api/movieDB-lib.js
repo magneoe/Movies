@@ -1,7 +1,8 @@
-import axios from 'axios';
+import {http} from './httpConfig';
+
 
 const getMovies = (page, size, sort, direction) => {
-    return axios.get('/api/movies/getAll', {
+    return http.get('/movies/getAll', {
         params: {
             size,
             page,
@@ -10,61 +11,60 @@ const getMovies = (page, size, sort, direction) => {
         }
     }).then(result => {
         return result.data;
-    });
+    }).catch(error => Promise.reject(error));
+}
+const getComments = (movieId, page, size) => {
+    return http.get('/movies/comments', {
+        params: {
+            movieId,
+            size,
+            page
+        }
+    }).then(result => {
+        return {movieId, data: result.data};
+    }).catch(error => Promise.reject(error));
 }
 
-const vote = (rating, movieId) => {
-    let username = 'test@gmail.com';
-    let password = 'secret';
-    let credentials = btoa(username + ':' + password);
-    let basicAuth = 'Basic ' + credentials;
-    console.log(basicAuth);
-    return axios({
-        url: '/api/movies/vote', 
+const voteMovie = (rating, movieId) => {
+    return http({
+        url: '/movies/vote ',
         method: 'POST',
-        headers: { 'Authorization': + basicAuth },
-        data:{
+        data: {
             rating,
             movieId,
         }
     }).then(result => {
         return result.data;
-    }).catch(error => console.log("Error:", error));
+    }).catch(error => Promise.reject(error));
 }
-const getAllActors = () => {
-    let username = 'test@gmail.com';
-    let password = 'secret';
-    let credentials = btoa(username + ':' + password);
-    let basicAuth = 'Basic ' + credentials;
-    console.log(basicAuth);
-    return axios({
-        url: '/api/actors/getAll', 
+const getRating = (movieId) => {
+    return http({
+        url: '/movies/rating',
         method: 'GET',
-        headers: { 'Authorization': + basicAuth },
+        params: {
+            movieId,
+        }
+    }).then(result => {
+        result.data.movieId = movieId;
+        return result.data;
+    }).catch(error => Promise.reject(error));
+}
+
+const getAllActors = () => {
+    return http({
+        url: '/actors/getAll',
+        method: 'GET',
     }).then(result => {
         return result.data;
-    }).catch(error => console.log("Error:", error));
+    }).catch(error => Promise.reject(error));
 }
-
-const performLogin = (username, password) => {
-    return axios({
-        method: 'POST',
-        url: '/perform_login',
-        data: {
-          username,
-          password
-        }
-      }).then(result => {
-        return result.data;
-    });
-}
-
 
 export {
     getMovies,
-    vote,
-    performLogin,
-    getAllActors
+    voteMovie,
+    getAllActors,
+    getRating,
+    getComments
 }
 
 

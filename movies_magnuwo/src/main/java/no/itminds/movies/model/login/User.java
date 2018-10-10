@@ -19,35 +19,45 @@ import javax.validation.constraints.NotEmpty;
 
 import org.hibernate.validator.constraints.Length;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 public class User {
 
+	@JsonIgnore
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long id;
 	
+	@JsonIgnore
 	@Email(message="Please provide a valid email")
 	@NotEmpty(message="Please provide a email")
 	@Column(unique=true)
 	private String email;
 	
+	@JsonIgnore
 	@NotEmpty(message="Password can not be empty")
 	@Length(min=6 , message="The password must be minimum 6 characters long")
 	private String password;
 	
+	@JsonIgnore
 	private Integer failedLoginAttempts = 0;
 
+	
 	@NotEmpty(message="Name cannot be empty")
 	private String name;
 	
 	@NotEmpty(message="Lastname cannot be empty")
 	private String lastname;
 	
+	@JsonIgnore
 	private Boolean active;
 	
+	@JsonIgnore
 	@ManyToMany(fetch=FetchType.EAGER, targetEntity=Role.class, cascade=CascadeType.ALL)
 	private Set<Role> roles = new HashSet<>();
 	
+	@JsonIgnore
 	private Timestamp created;
 
 	public User() {}

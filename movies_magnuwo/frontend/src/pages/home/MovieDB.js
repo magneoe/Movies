@@ -2,33 +2,34 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import { loadMovies, SORT_OPTIONS } from './actions';
-import {login} from '../login/actions';
-import { MovieModal, PageSort, PageInfo, MovieList } from '../../components';
+import { loadMovies, vote, loadRating, SORT_OPTIONS } from './actions';
+import { PageSort, PageInfo, MovieList } from '../../components';
+import MovieModal from '../../components/details/MovieModal';
 import './style.css';
 
-import {vote, getAllActors} from '../../api/movieDB-lib';
-
 class MovieDB extends Component {
-    constructor(props){
+    constructor(props) {
         super(props);
         this.state = {
             modalIsOpen: false,
-            selectedMovie: {}
-          };
+            selectedMovieId: null
+        };
     }
     componentDidMount() {
         const { size, direction, sort } = this.props.requestConfig || {};
         this.props.actions.loadMovies(0, size, sort, direction);
-        console.log(getAllActors());
     }
     onMovieClicked = (movieId) => {
-        console.log("Movie clicked:", movieId);
         const selectedMovie = this.props.movieData.content.find(movie => {
             return movie.id === movieId;
         });
-        this.setState({modalIsOpen: true, selectedMovie});
+        //Checks if the user rating for this movie has been loaded
+        if (!this.props.userRatings.find(userRating => userRating.movieId === movieId)) {
+            this.props.actions.loadRating(selectedMovie.id);
+        }
+        this.setState({ modalIsOpen: true, selectedMovieId: selectedMovie.id });
     }
+
     onNext = (currentPage, totalPages) => {
         if (currentPage + 1 < totalPages) {
             const { size, direction, sort } = this.props.requestConfig;
@@ -60,6 +61,7 @@ class MovieDB extends Component {
             numberOfElements: 0
         };
         const movies = movieData.content || [];
+
         return (
             <div>
                 <PageInfo onPrev={this.onPrev}
@@ -82,9 +84,10 @@ class MovieDB extends Component {
                     }
                 </div>
                 <MovieModal
-                modalIsOpen={this.state.modalIsOpen}
-                movie={this.state.selectedMovie}
-                closeModal={() => {this.setState({modalIsOpen: false})}}/>
+                    modalIsOpen={this.state.modalIsOpen}
+                    movieId={this.state.selectedMovieId}
+                    closeModal={() => { this.setState({ modalIsOpen: false, selectedMovieId: null }) }}
+                />
             </div>
         );
     }
@@ -95,10 +98,10 @@ export default connect(
         requestConfig: state.movieReducer.requestConfig,
         movieData: state.movieReducer.movieData,
         loading: state.movieReducer.loading,
+        userRatings: state.movieReducer.userRatings || []
     }),
     (dispatch) => ({
         actions: bindActionCreators(Object.assign({},
-            { loadMovies, login }), dispatch)
-
+            { loadMovies, vote, loadRating }), dispatch)
     })
 )(MovieDB)

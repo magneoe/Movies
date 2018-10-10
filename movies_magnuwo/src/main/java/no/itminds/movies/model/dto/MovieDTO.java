@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -52,6 +53,8 @@ public class MovieDTO {
 	
 	private List<Genre> genres;
 	private List<Actor> actors;
+	
+	@JsonIgnore
 	private List<Rating> ratings;
 	
 	private static Logger LOGGER = LoggerFactory.getLogger(MovieDTO.class);

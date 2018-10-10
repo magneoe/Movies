@@ -22,7 +22,7 @@ public class GlobalErrorHandler {
 
 	private static Logger logger = LoggerFactory.getLogger(GlobalErrorHandler.class);
 	
-	@ExceptionHandler(value= MissingServletRequestParameterException.class)
+	@ExceptionHandler(value= {MissingServletRequestParameterException.class, org.springframework.http.converter.HttpMessageNotReadableException.class})
 	protected ResponseEntity<ErrorResponse> handleMissingParameterException(MissingServletRequestParameterException msrex, HttpServletRequest request){
 		msrex.printStackTrace();
 		logger.warn(msrex.getMessage());

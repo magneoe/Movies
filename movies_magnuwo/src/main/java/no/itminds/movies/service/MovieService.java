@@ -23,4 +23,5 @@ public interface MovieService {
 	public Rating getCurrentRating(User currentUser, Movie currentMovie);
 	public Movie save(MovieDTO newMovieDTO);
 	public Page<Comment> getComments(Long movieId, Pageable pageable);
+	public Rating getCurrentRating(User user, Long movieId);
 }

@@ -8,12 +8,16 @@ import thunk from 'redux-thunk';
 
 import RootReducer from './store';
 import App from './App';
+import LoginHandler from './pages/login/LoginHandler';
 import combinedEpics from './pages/actions';
 import {DIRECTION_ASC, SORT_OPTIONS} from './pages/home/actions';
 
 import * as serviceWorker from './serviceWorker';
 
 const INITIAL_STATE = {
+    loginReducer: {
+        user: {}
+    },
     movieReducer: {
         loading: false,
         requestConfig: {
@@ -37,6 +41,7 @@ ReactDOM.render(
             <div>
                 <Route exact path='/' component={App}>
                 </Route>
+                <Route path="/loginpage" component={LoginHandler} />
             </div>
         </Router>
     </Provider>

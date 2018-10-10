@@ -7,6 +7,9 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import no.itminds.movies.model.login.User;
 
 @Entity
@@ -16,9 +19,12 @@ public class Rating {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long id;
 	
-	@NotNull
-	private int rating;
 	
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@NotNull
+	private Integer rating;
+	
+	@JsonIgnore
 	@NotNull
 	@ManyToOne
 	private User author;
@@ -38,11 +44,11 @@ public class Rating {
 		this.author = author;
 	}
 
-	public int getRating() {
+	public Integer getRating() {
 		return rating;
 	}
 
-	public void setRating(int rating) {
+	public void setRating(Integer rating) {
 		this.rating = rating;
 	}
 	

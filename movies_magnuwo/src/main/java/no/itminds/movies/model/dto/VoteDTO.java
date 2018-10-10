@@ -24,5 +24,4 @@ public class VoteDTO {
 		this.movieId = movieId;
 	}
 	
-	
 }

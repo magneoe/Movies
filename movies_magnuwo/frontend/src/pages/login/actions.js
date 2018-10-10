@@ -1,18 +1,17 @@
 import {from, of} from 'rxjs';
-import {mergeMap, map, delay, catchError} from 'rxjs/operators';
+import {mergeMap, map, catchError} from 'rxjs/operators';
 import {ofType} from 'redux-observable';
 
-import {performLogin} from '../../api/movieDB-lib';
+import {performLogin} from '../../api/login-lib';
 
 export const LOGIN = "LOGIN/LOGIN";
 export const LOGIN_SUCCESS = "LOGIN/LOGIN_SUCCESS";
 export const LOGIN_FAILURE = "LOGIN/LOGIN_FAILURE";
 
-export function login(username, password) {
+export function login(formData) {
     return {
         type: LOGIN,
-        username,
-        password
+        formData,
     }
 }
 export function loginSuccess() {
@@ -30,15 +29,14 @@ export function loginFailure(errorMessage) {
 export const loginEpic = actions$ =>
     actions$.pipe(
         ofType(LOGIN),
-        mergeMap(action => from(performLogin(action.username, action.password))),
+        mergeMap(action => from(performLogin(action.formData))),
         map(result => loginSuccess(result)),
         catchError(error => of(loginFailure(error)))
     );
 
 export const loginReducer = (state = {}, action) => {
-    console.log("Action:", action.type);
     switch(action.type){
-        case LOGIN: 
+        case LOGIN:
             return {...state};
         case LOGIN_SUCCESS:
             return {...state};

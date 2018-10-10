@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 
@@ -17,7 +18,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,6 +30,7 @@ import no.itminds.movies.model.Actor;
 import no.itminds.movies.model.Comment;
 import no.itminds.movies.model.Genre;
 import no.itminds.movies.model.Movie;
+import no.itminds.movies.model.Rating;
 import no.itminds.movies.model.dto.CommentDTO;
 import no.itminds.movies.model.dto.MovieDTO;
 import no.itminds.movies.model.dto.VoteDTO;
@@ -38,6 +39,7 @@ import no.itminds.movies.repository.ActorRepository;
 import no.itminds.movies.repository.GenreRepository;
 import no.itminds.movies.service.MovieService;
 import no.itminds.movies.service.UserService;
+import no.itminds.movies.service.impl.TokenAuthenticationService;
 
 /**
  * <h1>MovieController</h1>
@@ -63,6 +65,9 @@ public class MovieController {
 	private UserService userService;
 
 	@Autowired
+	private TokenAuthenticationService authenticationService;
+	
+	@Autowired
 	private ActorRepository actorRepository;
 
 	@Autowired
@@ -81,13 +86,14 @@ public class MovieController {
 	 * @return {@link Page} containing a page of Movies.
 	 */
 	@GetMapping(value = "movies/getAll")
-	public Page<MovieDTO> getMovies(@PageableDefault(page = 0, size = 10, sort="title") Pageable pageable) {
+	public Page<MovieDTO> getMovies(@PageableDefault(page = 0, size = 10, sort = "title") Pageable pageable) {
 		Page<Movie> moviePage = movieService.getAll(pageable);
 		return moviePage.map(movie -> new MovieDTO(movie));
 	}
 
 	/**
 	 * Controller endpoints for GETTING details of a movie
+	 * 
 	 * @param id Id of Movie to se details
 	 * @return Movie {@link Movie}
 	 */
@@ -98,6 +104,7 @@ public class MovieController {
 
 	/**
 	 * Controller endpoint for GETTING actors.
+	 * 
 	 * @param page  int which page to find, 0 indexed.
 	 * @param value int defining
 	 * @param size  int max pagesize
@@ -109,8 +116,22 @@ public class MovieController {
 			@PageableDefault(page = 0, size = 10, direction = Direction.ASC, sort = "name") Pageable pageable) {
 		return actorRepository.findAll(pageable);
 	}
+
+	/**
+	 * 
+	 * @param movieId
+	 * @param request
+	 * @return {@link Rating} containing the given rating for the user
+	 */
+	@GetMapping(value="movies/rating") 
+	public Rating getRating(@RequestParam String movieId, HttpServletRequest request) {
+		User user = getCurrentUser(request);
+		return movieService.getCurrentRating(user, Long.parseLong(movieId));
+	}
+	
 	/**
 	 * Controller endpoint for GETTING genres.
+	 * 
 	 * @param page  int which page to find, 0 indexed.
 	 * @param value int defining
 	 * @param size  int max pagesize
@@ -122,26 +143,33 @@ public class MovieController {
 			@PageableDefault(page = 0, size = 10, direction = Direction.ASC, sort = "name") Pageable pageable) {
 		return genreRepository.findAll(pageable);
 	}
+
 	/**
 	 * Controller endpoint for GETTING comments.
+	 * 
 	 * @param movieId
-	 * @param page  int which page to find, 0 indexed.
-	 * @param value int defining
-	 * @param size  int max pagesize
-	 * @param sort  0 = Ascending, 1 = Descending
+	 * @param page    int which page to find, 0 indexed.
+	 * @param value   int defining
+	 * @param size    int max pagesize
+	 * @param sort    0 = Ascending, 1 = Descending
 	 * @return {@link Page} containing all comments related to the given movieId
 	 */
 	@GetMapping(value = "movies/comments")
 	public Page<CommentDTO> comments(@RequestParam Long movieId,
-			@PageableDefault(page = 0, size = 10, sort = { "created" }, direction = Direction.ASC) Pageable pageable) {
+			@PageableDefault(page = 0, size = 10, sort = { "created" }, direction = Direction.ASC) Pageable pageable,
+			HttpServletRequest request) {
+		User existingUser = getCurrentUser(request);
 		Page<Comment> comments = movieService.getComments(movieId, pageable);
-		return comments.map(comment -> new CommentDTO(comment.getTitle(), comment.getComment(), movieId));
+		return comments.map(comment -> new CommentDTO(comment.getTitle(), comment.getComment(), movieId, existingUser));
 	}
+
 	/**
 	 * Controller endpoint for POSTING a new movie
+	 * 
 	 * @param newMovieDTO {@link MovieDTO}
-	 * @return {@link ResponseEntity} containing the saved Movie with an id and status code {@link HttpStatus.CREATED}.
-	 * Returns {@link HttpStatus.BAD_REQUEST} in case of validation errors
+	 * @return {@link ResponseEntity} containing the saved Movie with an id and
+	 *         status code {@link HttpStatus.CREATED}. Returns
+	 *         {@link HttpStatus.BAD_REQUEST} in case of validation errors
 	 */
 	@PostMapping(value = "movies/addMovie")
 	public ResponseEntity<?> addMovie(@RequestBody MovieDTO newMovieDTO) {
@@ -157,53 +185,54 @@ public class MovieController {
 
 		return new ResponseEntity<>(newMovieDTO, HttpStatus.CREATED);
 	}
+
 	/**
 	 * Controller endpoint for POSTING a comment.
+	 * 
 	 * @param commentDTO {@link CommentDTO}
-	 * @return {@link ResponseEntity} containing saved comment with an id, and {@HttpStatus.CREATED} upon success.
-	 * Returns {@link ResponseEntity} with {@link HttpStatus.BAD_REQUEST} 
-	 * upon authorization error {@link HttpStatus.UNAUTHORIZED}.
+	 * @return {@link ResponseEntity} containing saved comment with an id, and
+	 *         {@HttpStatus.CREATED} upon success. Returns {@link ResponseEntity}
+	 *         with {@link HttpStatus.BAD_REQUEST} upon authorization error
+	 *         {@link HttpStatus.UNAUTHORIZED}.
 	 */
 	@PostMapping(value = "movies/submitComment")
-	public ResponseEntity<?> submitComment(@RequestBody CommentDTO commentDTO) {
+	public ResponseEntity<?> submitComment(@RequestBody CommentDTO commentDTO, HttpServletRequest request) {
 		List<String> formErrors = MovieController.validate(commentDTO, validator);
-		User existingUser = getCurrentUser();
+		User existingUser = getCurrentUser(request);
 		// If validation not approved - return
 		if (formErrors.size() > 0) {
 			// More spesific error message?
 			return new ResponseEntity<>("Validation failed: " + formErrors, HttpStatus.BAD_REQUEST);
 		}
-		if (existingUser == null)
-			return new ResponseEntity<>("Unauthorized: not logged in", HttpStatus.UNAUTHORIZED);
-
 		Comment persistedComment = movieService.postComment(existingUser, commentDTO.getTitle(),
 				commentDTO.getComment(), commentDTO.getMovieId());
 		return new ResponseEntity<>(persistedComment, HttpStatus.CREATED);
 
 	}
+
 	/**
 	 * Controller endpoint for POSTING a vote.
+	 * 
 	 * @param voteDTO {@link VoteDTO}
-	 * @return {@link ResponseEntity} containing the updated Movie with recalculated average rating, and related list of ratings and {@HttpStatus.OK} upon success.
-	 * Returns {@link ResponseEntity} with {@link HttpStatus.UNAUTHORIZED} upon authorization errors.
+	 * @return {@link ResponseEntity} containing the updated Movie with recalculated
+	 *         average rating, and related list of ratings and {@HttpStatus.OK} upon
+	 *         success. Returns {@link ResponseEntity}.
 	 */
 	@PostMapping(value = "movies/vote")
-	public ResponseEntity<?> vote(@RequestBody VoteDTO voteDTO) {
-		User existingUser = getCurrentUser();
-		if (existingUser != null) {
-			MovieDTO movieDTO = new MovieDTO(
-					movieService.vote(existingUser, voteDTO.getMovieId(), voteDTO.getRating()));
-			return new ResponseEntity<>(movieDTO, HttpStatus.OK);
-		}
-		return new ResponseEntity<>("Unauthorized: not logged in", HttpStatus.UNAUTHORIZED);
+	public ResponseEntity<?> vote(@RequestBody VoteDTO voteDTO, HttpServletRequest request) {
+		User existingUser = getCurrentUser(request);
+		MovieDTO movieDTO = new MovieDTO(movieService.vote(existingUser, voteDTO.getMovieId(), voteDTO.getRating()));
+		return new ResponseEntity<>(movieDTO, HttpStatus.OK);
 	}
 
 	/*
 	 * Helper methods
 	 */
-	private User getCurrentUser() {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		return userService.findByEmail(auth.getName());
+	private User getCurrentUser(HttpServletRequest request) {
+		Authentication auth = authenticationService.getAuthentication(request);
+		if (auth != null)
+			return userService.findByEmail(auth.getName());
+		return null;
 	}
 
 //	private <T extends Comparable<T>> List<T> getCachedItems(final String CACHE_KEY,

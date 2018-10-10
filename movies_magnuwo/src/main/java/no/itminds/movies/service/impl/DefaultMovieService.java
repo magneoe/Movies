@@ -109,6 +109,19 @@ public class DefaultMovieService implements MovieService {
 		}
 		return null;
 	}
+	@Override
+	public Rating getCurrentRating(User currentUser, Long movieId) {
+		if (currentUser == null || movieId == null)
+			throw new IllegalArgumentException("Get current rating: invalid input");
+		Movie currentMovie = getDetails(movieId);
+		
+		Optional<Rating> optRating = currentMovie.getRatings().stream().filter(r -> r.getAuthor().equals(currentUser))
+				.findFirst();
+		if (optRating.isPresent()) {
+			return optRating.get(); 
+		}
+		return new Rating();
+	}
 
 	@Override
 	@Transactional
@@ -127,4 +140,6 @@ public class DefaultMovieService implements MovieService {
 			throw new IllegalArgumentException("Movie id null");
 		return movieRepo.getComments(movieId, pageable);
 	}
+
+	
 }
