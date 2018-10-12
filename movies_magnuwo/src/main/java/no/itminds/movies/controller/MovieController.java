@@ -12,7 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -156,7 +158,7 @@ public class MovieController {
 	 */
 	@GetMapping(value = "movies/comments")
 	public Page<CommentDTO> comments(@RequestParam Long movieId,
-			@PageableDefault(page = 0, size = 10, sort = { "created" }, direction = Direction.ASC) Pageable pageable,
+			@PageableDefault(page = 0, size = 10) Pageable pageable,
 			HttpServletRequest request) {
 		User existingUser = getCurrentUser(request);
 		Page<Comment> comments = movieService.getComments(movieId, pageable);
