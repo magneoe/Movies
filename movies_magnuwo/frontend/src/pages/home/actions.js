@@ -2,7 +2,7 @@ import { from, of} from 'rxjs';
 import { switchMap, mergeMap, map, delay, catchError, concat } from 'rxjs/operators';
 import { ofType } from 'redux-observable';
 
-import { getMovies, voteMovie, getRating, getComments } from '../../api/movieDB-lib';
+import { getMoviesApi, voteMovieApi, getRatingApi, getCommentsApi, postCommentApi } from '../../api/movieDB-lib';
 
 export const LOAD_MOVIES = "MOVIES/LOAD_MOVIES";
 export const LOAD_MOVIES_SUCCESS = "MOVIES/LOAD_MOVIES_SUCCESS";
@@ -11,6 +11,10 @@ export const LOAD_MOVIES_FAILURE = "MOVIES/LOAD_MOVIES_FAILURE";
 export const LOAD_COMMENTS = "MOVIES/LOAD_COMMENTS";
 export const LOAD_COMMENT_SUCCESS = "MOVIES/LOAD_COMMENTS_SUCCSESS";
 export const LOAD_COMMENT_FAILURE = "MOVIES/LOAD_COMMENTS_FAILURE";
+
+export const POST_COMMENT = "MOVIES/POST_COMMENT";
+export const POST_COMMENT_SUCCESS = "MOVIES/POST_COMMENT_SUCCESS";
+export const POST_COMMENT_FAILURE = "MOVIES/POST_COMMENT_FAILURE";
 
 export const VOTE = "MOVIES/VOTE";
 export const VOTE_SUCCSESS = "MOVIES/VOTE_SUCCESS";
@@ -64,6 +68,26 @@ export function loadCommentsSuccess(result){
 export function loadCommentsFailure(error) {
     return {
         type: LOAD_COMMENT_FAILURE,
+        error,
+    }
+}
+
+export function postComment(formData, movieId) {
+    return {
+        type: POST_COMMENT,
+        formData,
+        movieId,
+    }
+}
+export function postCommentSuccess(result) {
+    return {
+        type: POST_COMMENT_SUCCESS,
+        result,
+    }
+}
+export function postCommentFailure(error) {
+    return {
+        type: POST_COMMENT_FAILURE,
         error,
     }
 }
@@ -126,7 +150,7 @@ export const loadMoviesEpic = actions$ =>
     actions$.pipe(
         ofType(LOAD_MOVIES),
         delay(1000),
-        mergeMap(action => from(getMovies(action.page, action.size, action.sort, action.direction))),
+        mergeMap(action => from(getMoviesApi(action.page, action.size, action.sort, action.direction))),
         map(result => loadMoviesSuccess(result)),
         catchError(error => of(loadMoviesFailure(handleError(error))))
     );
@@ -135,7 +159,7 @@ export const voteEpic = actions$ =>
     actions$.pipe(
         ofType(VOTE),
         switchMap(action =>
-            from(voteMovie(action.rating, action.movieId)).pipe(
+            from(voteMovieApi(action.rating, action.movieId)).pipe(
                 map(result => voteSuccess(result)),
                 concat(of(loadRatingSuccess({ rating: action.rating, movieId: action.movieId })))
             )
@@ -146,19 +170,26 @@ export const loadRatingEpic = actions$ =>
     actions$.pipe(
         ofType(LOAD_RATING),
         delay(1000),
-        mergeMap(action => from(getRating(action.movieId))),
+        mergeMap(action => from(getRatingApi(action.movieId))),
         map(result => loadRatingSuccess(result)),
         catchError(error => of(loadRatingFailure(handleError(error))))
     );
 export const loadCommentsEpic = actions$ =>
         actions$.pipe(
             ofType(LOAD_COMMENTS),
-            mergeMap(action => from(getComments(action.movieId, action.page,
+            mergeMap(action => from(getCommentsApi(action.movieId, action.page,
                 action.size))),
             map(result => loadCommentsSuccess(result)),
             catchError(error => of(loadCommentsFailure(handleError(error))))
         );
 
+export const postCommentEpic = actions$ =>
+                actions$.pipe(
+                    ofType(POST_COMMENT),
+                    switchMap(action => from(postCommentApi(action.formData, action.movieId))),
+                    map(result => postCommentSuccess(result)),
+                    catchError(error => of(postCommentFailure(handleError(error))))
+                );
 
 
 
@@ -180,7 +211,6 @@ export const movieReducer = (state = {}, action) => {
                 ...state,
                 loading: false,
                 movieData: action.movieData,
-                error: null,
             }
         case LOAD_MOVIES_FAILURE:
             return {
@@ -189,56 +219,32 @@ export const movieReducer = (state = {}, action) => {
                 error: action.error,
                 movieData: null
             }
-        case LOAD_COMMENTS:
-            return {
-                ...state,
-                loading: true
-            }
+
         case LOAD_COMMENT_SUCCESS:
             const result = action.result || {};
             const currentComments = state.comments || [];
-            let updatedComments = [];
+            let updatedCommentsTest = [];
 
             const indexOfCurrentComments = currentComments.findIndex(entry => entry.movieId === result.movieId);
             if (indexOfCurrentComments === -1) {
-                updatedComments = [...currentComments, action.result];
+                updatedCommentsTest = [...currentComments, action.result];
             }
             else {
-                updatedComments = currentComments.map(entry => {
-                    if (action.result.movieId !== entry.movieId)
-                        return entry;
-                    return {
-                        ...action.result
-                    }
-                })
+                updatedCommentsTest = updateObjectInArray(currentComments,
+                    {index: indexOfCurrentComments, item: currentComments[indexOfCurrentComments]});
             }
 
             return {
                 ...state,
                 loading: false,
-                comments: updatedComments,
-            }
-        case LOAD_COMMENT_FAILURE:
-            return {
-                ...state,
-                loading: false,
-            }
-        case VOTE:
-            return {
-                ...state,
-                loading: true,
+                comments: updatedCommentsTest,
             }
         case VOTE_SUCCSESS:
             const currentMovieData = state.movieData || {};
             const currentMovieContent = currentMovieData.content || [];
-            const updatedMovieContent = currentMovieContent.map(entry => {
-                if(entry.id !== action.movieData.id){
-                    return entry;
-                }
-                return {
-                    ...action.movieData
-                };
-            });
+
+            const indexOfMovieContentToUpdate = currentMovieContent.findIndex(entry => entry.id === action.movieData.id);
+            const updatedMovieContent = updateObjectInArray(currentMovieContent, {index: indexOfMovieContentToUpdate, item: action.movieData});
             return {
                 ...state,
                 loading: false,
@@ -247,12 +253,19 @@ export const movieReducer = (state = {}, action) => {
                     content: updatedMovieContent
                 }
             }
+        case LOAD_RATING_FAILURE:
+        case POST_COMMENT_FAILURE:
         case VOTE_FAILURE:
+        case LOAD_COMMENT_FAILURE:
             return {
                 ...state,
                 loading: false,
             }
+
         case LOAD_RATING:
+        case POST_COMMENT:
+        case VOTE:
+        case LOAD_COMMENTS:
             return {
                 ...state,
                 loading: true
@@ -266,25 +279,64 @@ export const movieReducer = (state = {}, action) => {
                 updatedUserRatings = [...currentUserRatings, action.currentRating];
             }
             else {
-                updatedUserRatings = currentUserRatings.map(rating => {
-                    if (action.currentRating.movieId !== rating.movieId)
-                        return rating;
-                    return {
-                        ...action.currentRating
-                    }
-                })
+                updatedUserRatings = updateObjectInArray(currentUserRatings, {index: indexOfRating, item: action.currentRating});
             }
             return {
                 ...state,
                 loading: false,
                 userRatings: updatedUserRatings
             }
-        case LOAD_RATING_FAILURE:
+
+        case POST_COMMENT_SUCCESS:
+            let updatedCommentsContent = [];
+            let updatedComments = [];
+
+            const comments = state.comments || [];
+            const newComment = action.result || {};
+            const indexOfMovieComments = comments.findIndex(entry => entry.movieId === newComment.movieId);
+            if(indexOfMovieComments !== -1) {
+                //Updates the commentsContent array - immutable
+                updatedCommentsContent =
+                    insertItem(comments[indexOfMovieComments].data.content,
+                                {index: 0, item: newComment});
+                //Updates the comment array - immutable
+               updatedComments = updateObjectInArray(comments,
+                    {index: indexOfMovieComments, item: {
+                        ...comments[indexOfMovieComments],
+                        data: {
+                            ...comments[indexOfMovieComments].data,
+                            content: updatedCommentsContent,
+                        }
+                    }})
+            }
             return {
                 ...state,
                 loading: false,
+                comments: updatedComments
             }
         default:
             return state;
     }
+}
+/*
+* Helper function to update arrays without mutating the state
+*/
+const updateObjectInArray = (array, action) => {
+    return array.map((item, index) => {
+        if(index !== action.index){
+            return item;
+        }
+        return {
+            ...item,
+            ...action.item,
+        }
+    });
+}
+const removeItem = (array, action) => {
+    return array.filter((item, index) => index !== action.index);
+}
+const insertItem = (array, action) => {
+    let newArray = array.slice();
+    newArray.splice(action.index, 0, action.item);
+    return newArray;
 }

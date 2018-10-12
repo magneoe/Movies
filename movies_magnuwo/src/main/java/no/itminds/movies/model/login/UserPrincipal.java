@@ -17,21 +17,23 @@ public class UserPrincipal implements UserDetails {
 	 */
 	private static final long serialVersionUID = -1952225599199212525L;
 	private Collection<SimpleGrantedAuthority> authorities;
-    private String email;
-    private String password;
-    private boolean active;
-    private int failedLoginAttempts;
-	
+	private String email;
+	private String password;
+	private boolean active;
+	private int failedLoginAttempts;
+
 	public UserPrincipal(User user) {
-		this.email = user.getEmail();
-		this.password = user.getPassword();
-		this.active = user.getActive();
-		this.failedLoginAttempts = user.getFailedLoginAttempts();
-		
-		authorities = new ArrayList<>();
-        user.getRoles().stream().forEach(role -> {
-            authorities.add(new SimpleGrantedAuthority(role.getRole()));
-        });
+		if (user != null) {
+			this.email = user.getEmail();
+			this.password = user.getPassword();
+			this.active = user.getActive();
+			this.failedLoginAttempts = user.getFailedLoginAttempts();
+
+			authorities = new ArrayList<>();
+			user.getRoles().stream().forEach(role -> {
+				authorities.add(new SimpleGrantedAuthority(role.getRole()));
+			});
+		}
 	}
 
 	@Override

@@ -2,8 +2,8 @@ package no.itminds.movies.test.controller;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import javax.transaction.Transactional;
 
@@ -20,10 +20,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -31,35 +32,45 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import no.itminds.movies.App;
+import no.itminds.movies.config.WebSecurityConfig;
 import no.itminds.movies.model.dto.CommentDTO;
 import no.itminds.movies.model.dto.MovieDTO;
 import no.itminds.movies.model.dto.VoteDTO;
+import no.itminds.movies.model.login.User;
+import no.itminds.movies.service.impl.TokenAuthenticationService;
 
 @TestPropertySource(locations = "classpath:test-integration.properties")
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, classes = App.class)
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(secure=false)
+@ContextConfiguration(classes= {WebSecurityConfig.class})
 @Transactional
 public class MovieControllerWebIntegrationTest {
 
 	private final static Logger LOGGER = LoggerFactory.getLogger(MovieControllerWebIntegrationTest.class);
-
+	
 	@Autowired
 	private MockMvc mockMvc;
 
 	@Autowired
 	private ObjectMapper mapper;
 
+	@Autowired
+	private TokenAuthenticationService authenticationService;
+
 	private JacksonTester<MovieDTO> jsonTesterMovieDTO;
 	private JacksonTester<CommentDTO> jsonTesterComment;
 	private JacksonTester<VoteDTO> jsonTesterVoteDTO;
 
-	private final Date dateNow = Date.valueOf(LocalDate.now());
+	private final LocalDate dateNow = LocalDate.now();
+	private final LocalDateTime dateTimeNow = LocalDateTime.now();
+
+	private User testUser;
 
 	@Before
 	public void setUp() throws Exception {
-
 		JacksonTester.initFields(this, mapper);
+		testUser = new User("test@gmail.com", "password", "Harry", "Hole");
 	}
 
 	@After
@@ -129,37 +140,49 @@ public class MovieControllerWebIntegrationTest {
 				.andDo(MockMvcResultHandlers.print());
 	}
 
-	@WithMockUser(value = "test@gmail.com")
 	@Test
 	public void testSubmitComment() throws Exception {
 		final String TEST_TITLE = "TestTitle";
 		final String TEST_COMMENT = "TestComment";
 		final Long MOVIE_ID = 2l;
-		CommentDTO commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID);
+		CommentDTO commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID, dateTimeNow, testUser);
 
 		final String SUBMITTED_COMMENT_JSON = jsonTesterComment.write(commentDTO).getJson();
-
+		final String token = obtainAccessToken(testUser.getEmail(), testUser.getPassword());
+		
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment").accept(MediaType.APPLICATION_JSON)
-				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_COMMENT_JSON))
-				.andExpect(MockMvcResultMatchers.status().isCreated()).andExpect(jsonPath("$.title", Is.is(TEST_TITLE)))
-				.andExpect(jsonPath("$.comment", Is.is(TEST_COMMENT)))
-				.andExpect(jsonPath("$.id", IsNull.notNullValue())).andExpect(jsonPath("$.id", Is.isA(Integer.class)))
-				.andDo(MockMvcResultHandlers.print());
+				.contentType(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING, token)
+				.content(SUBMITTED_COMMENT_JSON))
+				.andDo(MockMvcResultHandlers.log())
+				.andExpect(MockMvcResultMatchers.status().isCreated())
+				.andExpect(jsonPath("$.title", Is.is(TEST_TITLE))).andExpect(jsonPath("$.comment", Is.is(TEST_COMMENT)))
+				.andExpect(jsonPath("$.created", IsNull.notNullValue()))
+				.andExpect(jsonPath("$.movieId", Is.isA(Integer.class)))
+				.andExpect(jsonPath("$.author.name", Is.isA(String.class)))
+				.andExpect(jsonPath("$.author.lastname", Is.isA(String.class)))
+				.andExpect(jsonPath("$.author.email").doesNotExist())
+				.andExpect(jsonPath("$.author.password").doesNotExist()).andDo(MockMvcResultHandlers.print());
 
 	}
 
-	@WithMockUser(value = "test@gmail.com")
+	// @WithMockUser(value = "test@gmail.com")
 	@Test
 	public void testSubmitComment_InvalidInput() throws Exception {
 		// Invalid MovidId
 		String TEST_TITLE = "Test";
 		String TEST_COMMENT = "Test";
 		Long MOVIE_ID = null;
-		CommentDTO commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID);
+		CommentDTO commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID, dateTimeNow, testUser);
 
 		String SUBMITTED_COMMENT_JSON = jsonTesterComment.write(commentDTO).getJson();
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment").accept(MediaType.APPLICATION_JSON)
+		// Invalid movieId
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment").
+				accept(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING,
+						TokenAuthenticationService.TOKEN_PREFIX + " "
+								+ authenticationService.getTokenForTesting(testUser.getEmail()))
 				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_COMMENT_JSON))
 				.andExpect(MockMvcResultMatchers.status().isBadRequest()).andDo(MockMvcResultHandlers.print());
 
@@ -168,40 +191,114 @@ public class MovieControllerWebIntegrationTest {
 		TEST_TITLE = "";
 		TEST_COMMENT = "Test";
 		MOVIE_ID = 2l;
-		commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID);
+		commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID, dateTimeNow, testUser);
 
 		SUBMITTED_COMMENT_JSON = jsonTesterComment.write(commentDTO).getJson();
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment").accept(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment")
+				.accept(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING,
+						TokenAuthenticationService.TOKEN_PREFIX + " "
+								+ authenticationService.getTokenForTesting(testUser.getEmail()))
 				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_COMMENT_JSON))
 				.andExpect(MockMvcResultMatchers.status().isBadRequest()).andDo(MockMvcResultHandlers.print());
 
-		//Invalid comment
+		// Invalid comment
 		TEST_TITLE = "Test";
 		TEST_COMMENT = null;
 		MOVIE_ID = 2l;
-		commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID);
+		commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID, dateTimeNow, testUser);
 
 		SUBMITTED_COMMENT_JSON = jsonTesterComment.write(commentDTO).getJson();
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment").accept(MediaType.APPLICATION_JSON)
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment")
+				.accept(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING,
+						TokenAuthenticationService.TOKEN_PREFIX + " "
+								+ authenticationService.getTokenForTesting(testUser.getEmail()))
 				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_COMMENT_JSON))
 				.andExpect(MockMvcResultMatchers.status().isBadRequest()).andDo(MockMvcResultHandlers.print());
 
-		
+		//Invalid user - no token provided
+		TEST_TITLE = "Test";
+		TEST_COMMENT = null;
+		MOVIE_ID = 2l;
+		commentDTO = new CommentDTO(TEST_TITLE, TEST_COMMENT, MOVIE_ID, dateTimeNow, testUser);
+
+		SUBMITTED_COMMENT_JSON = jsonTesterComment.write(commentDTO).getJson();
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment")
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_COMMENT_JSON))
+				.andExpect(MockMvcResultMatchers.status().isBadRequest()).andDo(MockMvcResultHandlers.print());
 	}
 
-	@WithMockUser(value = "test@gmail.com")
+	// @WithMockUser(value = "test@gmail.com")
 	@Test
 	public void testVote() throws Exception {
 
-		VoteDTO voteDTO = new VoteDTO(5, 11l);
+		VoteDTO voteDTO = new VoteDTO(10, 11l);
 
 		final String SUBMITTED_VOTE_JSON = jsonTesterVoteDTO.write(voteDTO).getJson();
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/vote").accept(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING,
+						TokenAuthenticationService.TOKEN_PREFIX + " "
+								+ authenticationService.getTokenForTesting(testUser.getEmail()))
 				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_VOTE_JSON))
-				.andExpect(MockMvcResultMatchers.status().isOk()).andExpect(jsonPath("$.ratings.length()", Is.is(1)))
-				.andExpect(jsonPath("$.ratings[0].rating", Is.is(5)));
+				.andExpect(MockMvcResultMatchers.status().isOk()).andExpect(jsonPath("$.id", Is.is(11)))
+				.andExpect(jsonPath("$.averageRating", Is.is(10.0)));
+	}
+
+	public void testVote_invalidInput() throws Exception {
+		VoteDTO voteDTO = new VoteDTO(null, 11l);
+
+		final String SUBMITTED_VOTE_JSON = jsonTesterVoteDTO.write(voteDTO).getJson();
+
+		//Invalid rating
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/vote").accept(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING,
+						TokenAuthenticationService.TOKEN_PREFIX + " "
+								+ authenticationService.getTokenForTesting(testUser.getEmail()))
+				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_VOTE_JSON))
+				.andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+		//Invalid movieId
+		voteDTO = new VoteDTO(4, null);
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/vote").accept(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING,
+						TokenAuthenticationService.TOKEN_PREFIX + " "
+								+ authenticationService.getTokenForTesting(testUser.getEmail()))
+				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_VOTE_JSON))
+				.andExpect(MockMvcResultMatchers.status().isBadRequest());
+		
+		//So such movie
+		voteDTO = new VoteDTO(4, 50l);
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/vote").accept(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING,
+						TokenAuthenticationService.TOKEN_PREFIX + " "
+								+ authenticationService.getTokenForTesting(testUser.getEmail()))
+				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_VOTE_JSON))
+				.andExpect(MockMvcResultMatchers.status().isNotFound());
+		
+		//Not authenticated
+		voteDTO = new VoteDTO(4, 11l);
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/vote").accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_VOTE_JSON))
+				.andExpect(MockMvcResultMatchers.status().isUnauthorized());
+	}
+	
+	
+	private String obtainAccessToken(String username, String password) throws Exception {
+		  
+	    final String bodyContent = "{\"email\":\"" + username + "\", \"password\":\"" + password + "\"}";
+	 
+	    ResultActions result 
+	      = mockMvc.perform(MockMvcRequestBuilders.post("/login")
+	        .content(bodyContent)
+	        .accept(MediaType.APPLICATION_JSON))
+	        .andExpect(MockMvcResultMatchers.status().isOk());
+	 
+	    return result.andReturn().getResponse().getHeader(TokenAuthenticationService.HEADER_STRING);
 	}
 }

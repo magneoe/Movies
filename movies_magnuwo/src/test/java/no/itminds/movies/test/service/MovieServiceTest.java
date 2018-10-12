@@ -61,7 +61,7 @@ public class MovieServiceTest {
 	private List<Movie> testMovies;
 	private MovieDTO testDTOMovie;
 	
-	private final Date dateNow = Date.valueOf(LocalDate.now());
+	private final LocalDate dateNow = LocalDate.now();
 
 	@Before
 	public void setUp() throws Exception {
@@ -156,7 +156,7 @@ public class MovieServiceTest {
 		assertNotNull("A valid comment should be returned", comment);
 		assertThat(comment.getTitle(), Is.is("TestTitle"));
 		assertThat(comment.getComment(), Is.is("TestComment"));
-		assertTrue(LocalDateTime.now().minusMinutes(2).isBefore(comment.getCreated().toLocalDateTime()));
+		assertTrue(LocalDateTime.now().minusMinutes(2).isBefore(comment.getCreated()));
 		
 		/*
 		 * Test 2 - 
@@ -224,6 +224,8 @@ public class MovieServiceTest {
 		//Arrange
 		final Long MOCK_MOVIE_ID = new Long(10);
 		Movie mockMovie = new Movie(MOCK_MOVIE_ID);
+		Optional<Movie> optionalOfMovie = Optional.of(mockMovie);
+		
 		mockMovie.setTitle("Pulp fiction");
 		mockMovie.setPlot("Plot");
 		mockMovie.setYear("1955");
@@ -240,7 +242,18 @@ public class MovieServiceTest {
 		assertThat(currentRating.getRating(), Is.is(6));
 		assertNotNull(mockMovie);
 		
+		/*
+		 * Overloaded method
+		 * Parameters: User currentUser and Long movieId
+		 */
+		//When
+		Mockito.when(movieRepo.findById(MOCK_MOVIE_ID)).thenReturn(optionalOfMovie);
+		currentRating = movieService.getCurrentRating(user, MOCK_MOVIE_ID);
 		
+		//Then
+		assertThat(currentRating.getAuthor().getEmail(), Is.is("test@gmail.com"));
+		assertThat(currentRating.getRating(), Is.is(6));
+		assertNotNull(mockMovie);
 	}
 	@Test
 	public void testGetCurrentRating_invalidInput() {
@@ -256,9 +269,11 @@ public class MovieServiceTest {
 		 * Test 1 
 		 */
 		expectedException.expect(IllegalArgumentException.class);
-		currentRating = movieService.getCurrentRating(user, null);
+		currentRating = movieService.getCurrentRating(user, new Movie());
 		
-		assertNull(currentRating);
+		assertNotNull(currentRating);
+		assertEquals(currentRating.getAuthor(), null);
+		assertEquals(currentRating.getRating(), null);
 		
 		/*
 		 * Test 2
@@ -284,7 +299,9 @@ public class MovieServiceTest {
 		currentRating = movieService.getCurrentRating(user, mockMovie);
 		
 		assertNull(currentRating);
+		
 	}
+	
 
 	@Test
 	public void testSave() {

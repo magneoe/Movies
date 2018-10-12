@@ -1,6 +1,6 @@
 package no.itminds.movies.model;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -9,9 +9,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import no.itminds.movies.model.login.User;
 
@@ -26,7 +23,7 @@ public class Comment {
 	
 	private String comment;
 	
-	private Timestamp created;
+	private LocalDateTime created;
 	
 	@NotNull
 	@ManyToOne(fetch=FetchType.EAGER)
@@ -38,7 +35,7 @@ public class Comment {
 		this.title = title;
 		this.comment = comment;
 		this.author = author;
-		this.created = new Timestamp(System.currentTimeMillis());
+		this.created = LocalDateTime.now();
 	}
 	public Long getId() {
 		return id;
@@ -72,11 +69,11 @@ public class Comment {
 		this.author = author;
 	}
 
-	public Timestamp getCreated() {
+	public LocalDateTime getCreated() {
 		return created;
 	}
 
-	public void setCreated(Timestamp created) {
+	public void setCreated(LocalDateTime created) {
 		this.created = created;
 	}
 }

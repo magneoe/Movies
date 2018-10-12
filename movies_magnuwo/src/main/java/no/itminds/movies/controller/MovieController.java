@@ -160,7 +160,7 @@ public class MovieController {
 			HttpServletRequest request) {
 		User existingUser = getCurrentUser(request);
 		Page<Comment> comments = movieService.getComments(movieId, pageable);
-		return comments.map(comment -> new CommentDTO(comment.getTitle(), comment.getComment(), movieId, existingUser));
+		return comments.map(comment -> new CommentDTO(comment.getTitle(), comment.getComment(), movieId, comment.getCreated(), existingUser));
 	}
 
 	/**
@@ -204,8 +204,8 @@ public class MovieController {
 			// More spesific error message?
 			return new ResponseEntity<>("Validation failed: " + formErrors, HttpStatus.BAD_REQUEST);
 		}
-		Comment persistedComment = movieService.postComment(existingUser, commentDTO.getTitle(),
-				commentDTO.getComment(), commentDTO.getMovieId());
+		CommentDTO persistedComment = new CommentDTO(movieService.postComment(existingUser, commentDTO.getTitle(),
+				commentDTO.getComment(), commentDTO.getMovieId()), commentDTO.getMovieId());
 		return new ResponseEntity<>(persistedComment, HttpStatus.CREATED);
 
 	}

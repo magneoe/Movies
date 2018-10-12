@@ -1,7 +1,7 @@
 package no.itminds.movies.model;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.OptionalDouble;
 
@@ -15,14 +15,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import no.itminds.movies.model.dto.MovieDTO;
 
 @Entity
 public class Movie {
 
-	public final static String DATE_TIME_PATTERN = "dd-MM-yyyy";
+	public final static String DATE_TIME_PATTERN = "dd/MM/yyyy HH:mm";
+	public final static String DATE_PATTERN = "dd/MM/yyyy";
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -39,7 +38,7 @@ public class Movie {
 	private String contentRating;
 	private String duration;
 
-	private Date releaseDate;
+	private LocalDate releaseDate;
 	
 	private double averageRating;
 	private String orginalTitle;
@@ -51,7 +50,7 @@ public class Movie {
 	private String posterUrl;
 	private String plot;
 
-	private Date created;
+	private LocalDate created;
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.ALL })
 	private List<Comment> comments;
@@ -140,11 +139,11 @@ public class Movie {
 		this.duration = duration;
 	}
 
-	public Date getReleaseDate() {
+	public LocalDate getReleaseDate() {
 		return releaseDate;
 	}
 
-	public void setReleaseDate(Date releaseDate) {
+	public void setReleaseDate(LocalDate releaseDate) {
 		this.releaseDate = releaseDate;
 	}
 
@@ -204,11 +203,11 @@ public class Movie {
 		this.plot = plot;
 	}
 
-	public Date getCreated() {
+	public LocalDate getCreated() {
 		return created;
 	}
 
-	public void setCreated(Date created) {
+	public void setCreated(LocalDate created) {
 		this.created = created;
 	}
 
@@ -268,14 +267,14 @@ public class Movie {
 		private String year;
 		private String contentRating;
 		private String duration;
-		private Date releaseDate;
+		private LocalDate releaseDate;
 		private double averageRating;
 		private String orginalTitle;
 		private String storyLine;
 		private String imdbRating;
 		private String posterUrl;
 		private String plot;
-		private Date createdDate;
+		private LocalDate createdDate;
 		
 		private List<Genre> genres;
 		private List<Rating> ratings;
@@ -322,7 +321,7 @@ public class Movie {
 			return this;
 		}
 
-		public MovieBuilder releaseDate(Date releaseDate) {
+		public MovieBuilder releaseDate(LocalDate releaseDate) {
 			this.releaseDate = releaseDate;
 			return this;
 		}
@@ -362,7 +361,7 @@ public class Movie {
 			return this;
 		}
 
-		public MovieBuilder created(Date created) {
+		public MovieBuilder created(LocalDate created) {
 			this.createdDate = created;
 			return this;
 		}

@@ -1,7 +1,7 @@
-import {http} from './httpConfig';
+import { http } from './httpConfig';
 
 
-const getMovies = (page, size, sort, direction) => {
+const getMoviesApi = (page, size, sort, direction) => {
     return http.get('/movies/getAll', {
         params: {
             size,
@@ -13,7 +13,7 @@ const getMovies = (page, size, sort, direction) => {
         return result.data;
     }).catch(error => Promise.reject(error));
 }
-const getComments = (movieId, page, size) => {
+const getCommentsApi = (movieId, page, size) => {
     return http.get('/movies/comments', {
         params: {
             movieId,
@@ -21,11 +21,20 @@ const getComments = (movieId, page, size) => {
             page
         }
     }).then(result => {
-        return {movieId, data: result.data};
+        return { movieId, data: result.data };
     }).catch(error => Promise.reject(error));
 }
+const postCommentApi = (formData, movieId) => {
+    return http.post('/movies/submitComment', {
+        title: formData.get('title'),
+        comment: formData.get('comment'),
+        movieId,
+    }).
+        then(result => result.data).
+        catch(error => Promise.reject(error));
+}
 
-const voteMovie = (rating, movieId) => {
+const voteMovieApi = (rating, movieId) => {
     return http({
         url: '/movies/vote ',
         method: 'POST',
@@ -37,7 +46,7 @@ const voteMovie = (rating, movieId) => {
         return result.data;
     }).catch(error => Promise.reject(error));
 }
-const getRating = (movieId) => {
+const getRatingApi = (movieId) => {
     return http({
         url: '/movies/rating',
         method: 'GET',
@@ -50,7 +59,7 @@ const getRating = (movieId) => {
     }).catch(error => Promise.reject(error));
 }
 
-const getAllActors = () => {
+const getAllActorsApi = () => {
     return http({
         url: '/actors/getAll',
         method: 'GET',
@@ -60,11 +69,12 @@ const getAllActors = () => {
 }
 
 export {
-    getMovies,
-    voteMovie,
-    getAllActors,
-    getRating,
-    getComments
+    getMoviesApi,
+    voteMovieApi,
+    getAllActorsApi,
+    getRatingApi,
+    getCommentsApi,
+    postCommentApi
 }
 
 

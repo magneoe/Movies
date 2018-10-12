@@ -1,9 +1,6 @@
 package no.itminds.movies.service.impl;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashSet;
 
 import javax.persistence.PersistenceException;
 
@@ -38,7 +35,7 @@ public class UserServiceImpl implements UserService {
 		try {
 			user.setPassword(passwordEncoder.encode(user.getPassword()));
 			user.setActive(true);
-			user.setCreated(Timestamp.valueOf(LocalDateTime.now()));
+			user.setCreated(LocalDateTime.now());
 
 			Role userRole = roleRepository.findByRole("ROLE_USER");
 			user.addRole(userRole);

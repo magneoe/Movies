@@ -1,4 +1,4 @@
-import {loadMoviesEpic, voteEpic, loadRatingEpic, loadCommentsEpic} from '../home/actions';
+import {loadMoviesEpic, voteEpic, loadRatingEpic, loadCommentsEpic, postCommentEpic} from '../home/actions';
 import {loginEpic} from '../login/actions';
 import { combineEpics } from 'redux-observable';
 
@@ -7,5 +7,6 @@ export default combineEpics(
     voteEpic,
     loginEpic,
     loadRatingEpic,
-    loadCommentsEpic
+    loadCommentsEpic,
+    postCommentEpic
 );

@@ -20,6 +20,7 @@ const INITIAL_STATE = {
     },
     movieReducer: {
         loading: false,
+        comments: [],
         requestConfig: {
             size: 5, //Page size
             direction: DIRECTION_ASC, //Sort direction

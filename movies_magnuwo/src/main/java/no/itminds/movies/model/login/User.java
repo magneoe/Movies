@@ -1,6 +1,5 @@
 package no.itminds.movies.model.login;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -19,28 +18,29 @@ import javax.validation.constraints.NotEmpty;
 
 import org.hibernate.validator.constraints.Length;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 @Entity
 public class User {
 
-	@JsonIgnore
+	@JsonProperty(access=Access.WRITE_ONLY)
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long id;
 	
-	@JsonIgnore
+	@JsonProperty(access=Access.WRITE_ONLY)
 	@Email(message="Please provide a valid email")
 	@NotEmpty(message="Please provide a email")
 	@Column(unique=true)
 	private String email;
 	
-	@JsonIgnore
+	@JsonProperty(access=Access.WRITE_ONLY)
 	@NotEmpty(message="Password can not be empty")
 	@Length(min=6 , message="The password must be minimum 6 characters long")
 	private String password;
 	
-	@JsonIgnore
+	@JsonProperty(access=Access.WRITE_ONLY)
 	private Integer failedLoginAttempts = 0;
 
 	
@@ -50,15 +50,15 @@ public class User {
 	@NotEmpty(message="Lastname cannot be empty")
 	private String lastname;
 	
-	@JsonIgnore
+	@JsonProperty(access=Access.WRITE_ONLY)
 	private Boolean active;
 	
-	@JsonIgnore
+	@JsonProperty(access=Access.WRITE_ONLY)
 	@ManyToMany(fetch=FetchType.EAGER, targetEntity=Role.class, cascade=CascadeType.ALL)
 	private Set<Role> roles = new HashSet<>();
 	
-	@JsonIgnore
-	private Timestamp created;
+	@JsonProperty(access=Access.WRITE_ONLY)
+	private LocalDateTime created;
 
 	public User() {}
 	
@@ -72,7 +72,7 @@ public class User {
 		this.password = password;
 		this.name = name;
 		this.lastname = lastname;
-		this.created = Timestamp.valueOf(LocalDateTime.now());
+		this.created = LocalDateTime.now();
 		this.active = true;
 		this.failedLoginAttempts = 0;
 	}
@@ -142,11 +142,11 @@ public class User {
 		roles.add(role);
 	}
 
-	public Timestamp getCreated() {
+	public LocalDateTime getCreated() {
 		return created;
 	}
 
-	public void setCreated(Timestamp created) {
+	public void setCreated(LocalDateTime created) {
 		this.created = created;
 	}
 	

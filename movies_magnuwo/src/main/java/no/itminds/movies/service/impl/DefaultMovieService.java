@@ -107,20 +107,14 @@ public class DefaultMovieService implements MovieService {
 		if (optRating.isPresent()) {
 			return optRating.get();
 		}
-		return null;
+		return new Rating();
 	}
 	@Override
 	public Rating getCurrentRating(User currentUser, Long movieId) {
 		if (currentUser == null || movieId == null)
 			throw new IllegalArgumentException("Get current rating: invalid input");
 		Movie currentMovie = getDetails(movieId);
-		
-		Optional<Rating> optRating = currentMovie.getRatings().stream().filter(r -> r.getAuthor().equals(currentUser))
-				.findFirst();
-		if (optRating.isPresent()) {
-			return optRating.get(); 
-		}
-		return new Rating();
+		return getCurrentRating(currentUser, currentMovie);
 	}
 
 	@Override

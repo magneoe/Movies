@@ -1,11 +1,12 @@
 package no.itminds.movies.test.controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,8 +14,11 @@ import java.util.List;
 import javax.validation.Validation;
 import javax.validation.Validator;
 
+import org.hamcrest.core.Is;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -47,6 +51,7 @@ import no.itminds.movies.repository.ActorRepository;
 import no.itminds.movies.repository.GenreRepository;
 import no.itminds.movies.service.MovieService;
 import no.itminds.movies.service.UserService;
+import no.itminds.movies.service.impl.TokenAuthenticationService;
 
 public class MovieControllerTest {
 
@@ -69,6 +74,12 @@ public class MovieControllerTest {
 	@Mock
 	private Validator validator;
 
+	@Mock
+	private TokenAuthenticationService authenticationService;
+
+	@Rule
+	public ExpectedException expectedException = ExpectedException.none();
+
 	private List<Movie> testMovies;
 
 	private User testUser;
@@ -76,10 +87,11 @@ public class MovieControllerTest {
 	private Validator validatorImpl;
 
 	private Authentication auth;
-	
+
 	private MovieDTO testDTOMovie;
-	
-	private final Date dateNow = Date.valueOf(LocalDate.now());
+
+	private final LocalDate dateNow = LocalDate.now();
+	private final LocalDateTime dateTimeNow = LocalDateTime.now();
 
 	@Before
 	public void setup() throws NoSuchMethodException, SecurityException {
@@ -111,10 +123,10 @@ public class MovieControllerTest {
 
 		// Test user
 		testUser = new User("magne@hotmail.com", "secret", "Harry", "Hole");
-		
-		//Test DTO
-		testDTOMovie = new MovieDTO("Test", "1945", "Something happens", 
-				"Good", "46", "3.6", "testUrl", dateNow, dateNow, 5.0, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+
+		// Test DTO
+		testDTOMovie = new MovieDTO("Test", "1945", "Something happens", "Good", "46", "3.6", "testUrl", dateNow,
+				dateNow, 5.0, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 	}
 
 	@Test
@@ -169,7 +181,8 @@ public class MovieControllerTest {
 		MovieDTO actualMovie = (MovieDTO) responseEntity.getBody();
 		assertEquals("Title should be correct", EXPECTED_MOVIE_DTO.getTitle(), actualMovie.getTitle());
 		assertEquals("Plot should be correct", EXPECTED_MOVIE_DTO.getPlot(), actualMovie.getPlot());
-		assertEquals("Created date should be correct", EXPECTED_MOVIE_DTO.getCreatedDate(), actualMovie.getCreatedDate());
+		assertEquals("Created date should be correct", EXPECTED_MOVIE_DTO.getCreatedDate(),
+				actualMovie.getCreatedDate());
 		assertEquals("Year should be correct", EXPECTED_MOVIE_DTO.getYear(), actualMovie.getYear());
 	}
 
@@ -180,7 +193,7 @@ public class MovieControllerTest {
 		testDTOMovie.setTitle(null);
 		testDTOMovie.setCreatedDate(null);
 		testDTOMovie.setYear(null);
-		
+
 		final MovieDTO EXPECTED_MOVIE_DTO = testDTOMovie;
 		Movie EXPECTED_MOVIE = new MovieBuilder().fromMovieDTO(EXPECTED_MOVIE_DTO).build();
 
@@ -204,14 +217,16 @@ public class MovieControllerTest {
 
 		final Comment COMMENT_EXPECTED = new Comment(TITLE, COMMENT, testUser);
 		// When
-
+		when(authenticationService.getAuthentication(Mockito.any())).thenReturn(auth);
 		when(userService.findByEmail(Mockito.any())).thenReturn(testUser);
 		when(movieService.postComment(testUser, TITLE, COMMENT, MOVIE_ID)).thenReturn(COMMENT_EXPECTED);
 
-		ResponseEntity<?> responseEntity = movieController.submitComment(new CommentDTO(TITLE, COMMENT, MOVIE_ID));
+		ResponseEntity<?> responseEntity = movieController
+				.submitComment(new CommentDTO(TITLE, COMMENT, MOVIE_ID, dateTimeNow, testUser), null);
 		// Then
 		Mockito.verify(userService).findByEmail(Mockito.any());
-		assertEquals("Should return the persisted comment", responseEntity.getBody(), COMMENT_EXPECTED);
+		assertThat("ResponseEntity body should be equals to expected CommentDTO", responseEntity.getBody(),
+				Is.is(new CommentDTO(COMMENT_EXPECTED, MOVIE_ID)));
 		assertEquals("Should return statuscode CREATED", HttpStatus.CREATED, responseEntity.getStatusCode());
 	}
 
@@ -222,14 +237,30 @@ public class MovieControllerTest {
 		final String COMMENT = "TestComment";
 		final long MOVIE_ID = 5;
 		// When
+		when(authenticationService.getAuthentication(Mockito.any())).thenReturn(auth);
 		when(userService.findByEmail(Mockito.any())).thenReturn(null);
+		when(movieService.postComment(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+				.thenThrow(IllegalArgumentException.class);
 
-		ResponseEntity<?> responseEntity = movieController.submitComment(new CommentDTO(TITLE, COMMENT, MOVIE_ID));
+		expectedException.expect(IllegalArgumentException.class);
+		ResponseEntity<?> responseEntity = movieController
+				.submitComment(new CommentDTO(TITLE, COMMENT, MOVIE_ID, LocalDateTime.now(), testUser), null);
 		// Then
 		Mockito.verify(userService).findByEmail(Mockito.any());
-		Mockito.verifyZeroInteractions(movieService);
-		assertEquals("Should return unauthorized string", responseEntity.getBody(), "Unauthorized: not logged in");
-		assertEquals("Should return statuscode Unauthorized", HttpStatus.UNAUTHORIZED, responseEntity.getStatusCode());
+		Mockito.verify(movieService).postComment(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+		when(userService.findByEmail(Mockito.any())).thenReturn(testUser);
+		// Test 2 - invalid title
+		expectedException.expect(IllegalArgumentException.class);
+		responseEntity = movieController.submitComment(new CommentDTO(null, COMMENT, MOVIE_ID, dateTimeNow, testUser), null);
+
+		// Test 3 - invalid comment
+		expectedException.expect(IllegalArgumentException.class);
+		responseEntity = movieController.submitComment(new CommentDTO(TITLE, null, MOVIE_ID, dateTimeNow, testUser), null);
+
+		// Test 4 - invalid MovieID
+		expectedException.expect(IllegalArgumentException.class);
+		responseEntity = movieController.submitComment(new CommentDTO(TITLE, COMMENT, null, dateTimeNow, testUser), null);
 	}
 
 	@Test
@@ -237,20 +268,18 @@ public class MovieControllerTest {
 		// Arrange
 		final Integer RATING = 5;
 		final MovieDTO EXPECTED_MOVIE_DTO = testDTOMovie;
-		final Movie EXPECTED_MOVIE = new MovieBuilder().
-				id(new Long(4)).
-				fromMovieDTO(EXPECTED_MOVIE_DTO).
-				build();
+		final Movie EXPECTED_MOVIE = new MovieBuilder().id(new Long(4)).fromMovieDTO(EXPECTED_MOVIE_DTO).build();
 
 		// When
+		when(authenticationService.getAuthentication(Mockito.any())).thenReturn(auth);
 		when(userService.findByEmail(Mockito.any())).thenReturn(testUser);
 		when(movieService.vote(testUser, EXPECTED_MOVIE.getId(), RATING)).thenReturn(EXPECTED_MOVIE);
-		ResponseEntity<?> responseEntity = movieController.vote(new VoteDTO(RATING, EXPECTED_MOVIE.getId()));
+
+		ResponseEntity<?> responseEntity = movieController.vote(new VoteDTO(RATING, EXPECTED_MOVIE.getId()), null);
 		// Then
 		Mockito.verify(userService).findByEmail(Mockito.any());
 		Mockito.verify(movieService, Mockito.times(1)).vote(testUser, EXPECTED_MOVIE.getId(), RATING);
 
-		
 		assertEquals("Should return updated Movie", EXPECTED_MOVIE_DTO, responseEntity.getBody());
 		assertEquals("Should return HttpStatus OK", HttpStatus.OK, responseEntity.getStatusCode());
 	}
@@ -259,18 +288,30 @@ public class MovieControllerTest {
 	public void testVote_InvalidInput() {
 		// Arrange
 		final Integer RATING = 5;
-		final Movie EXPECTED_MOVIE = testMovies.get(0);
-
+		final Movie MOCK_MOVIE = testMovies.get(0);
+		MovieDTO expectedMovieDTO = new MovieDTO();
+		expectedMovieDTO.setGenres(null);
+		expectedMovieDTO.setRatings(null);
+		expectedMovieDTO.setActors(null);
 		// When
-		when(userService.findByEmail(Mockito.any())).thenReturn(null);
-		ResponseEntity<?> responseEntity = movieController.vote(new VoteDTO(RATING, EXPECTED_MOVIE.getId()));
+		when(authenticationService.getAuthentication(Mockito.any())).thenReturn(null);
+		when(movieService.vote(null, MOCK_MOVIE.getId(), RATING)).thenThrow(IllegalArgumentException.class);
+
+		expectedException.expect(IllegalArgumentException.class);
+		ResponseEntity<?> responseEntity = movieController.vote(new VoteDTO(RATING, MOCK_MOVIE.getId()), null);
 
 		// Then
-		Mockito.verify(userService).findByEmail(Mockito.any());
-		Mockito.verifyZeroInteractions(movieService);
+		Mockito.verifyZeroInteractions(userService);
 
-		assertEquals("Should return bad request string", responseEntity.getBody(), "Unauthorized: not logged in");
-		assertEquals("Should return statuscode BAD REQUEST", HttpStatus.UNAUTHORIZED, responseEntity.getStatusCode());
+		// Test 2 illegal movie Id
+		when(movieService.vote(testUser, null, RATING)).thenThrow(IllegalArgumentException.class);
+		expectedException.expect(IllegalArgumentException.class);
+		responseEntity = movieController.vote(new VoteDTO(RATING, null), null);
+
+		// Test 3 illegal rating
+		when(movieService.vote(testUser, MOCK_MOVIE.getId(), null)).thenThrow(IllegalArgumentException.class);
+		expectedException.expect(IllegalArgumentException.class);
+		responseEntity = movieController.vote(new VoteDTO(null, MOCK_MOVIE.getId()), null);
 	}
 
 	@Test
@@ -287,7 +328,7 @@ public class MovieControllerTest {
 		// When
 
 		when(movieService.getComments(MOVIE_ID, PAGEABLE)).thenReturn(EXPECTED_COMMENT_PAGE);
-		final Page<CommentDTO> ACTUAL_COMMENT_PAGE = movieController.comments(MOVIE_ID, PAGEABLE);
+		final Page<CommentDTO> ACTUAL_COMMENT_PAGE = movieController.comments(MOVIE_ID, PAGEABLE, null);
 		// Then
 
 		Mockito.verify(movieService).getComments(MOVIE_ID, PAGEABLE);
@@ -309,18 +350,19 @@ public class MovieControllerTest {
 		// Then
 		assertEquals("Should return a list of 3 Genres", EXPECTED_GENRE_PAGE.getContent().size(),
 				ACTUAL_GENRE_PAGE.getContent().size());
-		for(int i = 0; i < EXPECTED_GENRE_PAGE.getContent().size(); i++) {
+		for (int i = 0; i < EXPECTED_GENRE_PAGE.getContent().size(); i++) {
 			final Genre EXPECTED = EXPECTED_GENRE_PAGE.getContent().get(i);
 			final Genre ACTUAL = ACTUAL_GENRE_PAGE.getContent().get(i);
-			
-			assertEquals("Should be equal genres, since there is not sorting...", EXPECTED,  ACTUAL); 
+
+			assertEquals("Should be equal genres, since there is not sorting...", EXPECTED, ACTUAL);
 		}
 	}
 
 	@Test
 	public void testGetActors() {
 		// Arrange
-		List<Actor> EXPECTED_ACTORS = Arrays.asList(new Actor("Samuel Jackson"), new Actor("Clint Eastwood"), new Actor("Uma Thurman"));
+		List<Actor> EXPECTED_ACTORS = Arrays.asList(new Actor("Samuel Jackson"), new Actor("Clint Eastwood"),
+				new Actor("Uma Thurman"));
 		final Pageable PAGEABLE = new PageRequest(0, 10, Direction.ASC, "name");
 		final Page<Actor> EXPECTED_ACTOR_PAGE = new PageImpl<>(EXPECTED_ACTORS, PAGEABLE, 6);
 		// When
@@ -329,12 +371,12 @@ public class MovieControllerTest {
 		// Then
 		assertEquals("Should return a list of 3 Actors", EXPECTED_ACTOR_PAGE.getContent().size(),
 				ACTUAL_ACTOR_PAGE.getContent().size());
-		
-		for(int i = 0; i < EXPECTED_ACTOR_PAGE.getContent().size(); i++) {
+
+		for (int i = 0; i < EXPECTED_ACTOR_PAGE.getContent().size(); i++) {
 			final Actor EXPECTED = EXPECTED_ACTOR_PAGE.getContent().get(i);
 			final Actor ACTUAL = ACTUAL_ACTOR_PAGE.getContent().get(i);
-			
-			assertEquals("Should be equal actors, since there is not sorting...", EXPECTED,  ACTUAL); 
+
+			assertEquals("Should be equal actors, since there is not sorting...", EXPECTED, ACTUAL);
 		}
 	}
 }

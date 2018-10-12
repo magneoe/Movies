@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import { loadMovies, vote, loadRating, SORT_OPTIONS } from './actions';
+import { loadMovies, vote, loadRating, loadComments, SORT_OPTIONS } from './actions';
 import { PageSort, PageInfo, MovieList } from '../../components';
 import MovieModal from '../../components/details/MovieModal';
 import './style.css';
@@ -27,6 +27,7 @@ class MovieDB extends Component {
         if (!this.props.userRatings.find(userRating => userRating.movieId === movieId)) {
             this.props.actions.loadRating(selectedMovie.id);
         }
+        this.props.actions.loadComments(movieId, 0, 10);
         this.setState({ modalIsOpen: true, selectedMovieId: selectedMovie.id });
     }
 
@@ -98,10 +99,11 @@ export default connect(
         requestConfig: state.movieReducer.requestConfig,
         movieData: state.movieReducer.movieData,
         loading: state.movieReducer.loading,
-        userRatings: state.movieReducer.userRatings || []
+        userRatings: state.movieReducer.userRatings || [],
+        comments: state.movieReducer.comments
     }),
     (dispatch) => ({
         actions: bindActionCreators(Object.assign({},
-            { loadMovies, vote, loadRating }), dispatch)
+            { loadMovies, vote, loadRating, loadComments }), dispatch)
     })
 )(MovieDB)

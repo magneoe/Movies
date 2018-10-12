@@ -1,7 +1,7 @@
 package no.itminds.movies.model.dto;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.validation.constraints.NotEmpty;
@@ -22,43 +22,43 @@ import no.itminds.movies.model.Rating;
 
 @JsonInclude(Include.NON_NULL)
 public class MovieDTO {
-	
+
 	private Long id;
-	
-	@NotEmpty(message="Title cannot be empty")
+
+	@NotEmpty(message = "Title cannot be empty")
 	private String title;
-	@NotEmpty(message="Year cannot be empty")
+	@NotEmpty(message = "Year cannot be empty")
 	private String year;
-	@NotEmpty(message="Plot cannot be empty")
+	@NotEmpty(message = "Plot cannot be empty")
 	private String plot;
-	 
+
 	private String contentRating;
 	private String duration;
 	private String imdbRating;
 	private String posterUrl;
-	
+
 	// Formats output date when this DTO is passed through JSON
-    @JsonFormat(pattern = Movie.DATE_TIME_PATTERN)
+	@JsonFormat(pattern = Movie.DATE_PATTERN)
 	// Allows dd/MM/yyyy date to be passed into GET request in JSON
-    @DateTimeFormat(pattern = Movie.DATE_TIME_PATTERN)
-	private Date createdDate;
-	
+	@DateTimeFormat(pattern = Movie.DATE_PATTERN)
+	private LocalDate createdDate;
+
 	// Formats output date when this DTO is passed through JSON
-    @JsonFormat(pattern = Movie.DATE_TIME_PATTERN)
+	@JsonFormat(pattern = Movie.DATE_PATTERN)
 	// Allows dd/MM/yyyy date to be passed into GET request in JSON
-    @DateTimeFormat(pattern = Movie.DATE_TIME_PATTERN)
-	private Date releaseDate;
-    
-    private double averageRating;
-	
+	@DateTimeFormat(pattern = Movie.DATE_PATTERN)
+	private LocalDate releaseDate;
+
+	private double averageRating;
+
 	private List<Genre> genres;
 	private List<Actor> actors;
-	
+
 	@JsonIgnore
 	private List<Rating> ratings;
-	
+
 	private static Logger LOGGER = LoggerFactory.getLogger(MovieDTO.class);
-	
+
 	public MovieDTO() {
 		genres = new ArrayList<>();
 		actors = new ArrayList<>();
@@ -67,18 +67,9 @@ public class MovieDTO {
 
 	public MovieDTO(@NotEmpty(message = "Title cannot be empty") String title,
 			@NotEmpty(message = "Year cannot be empty") String year,
-			@NotEmpty(message = "Plot cannot be empty") String plot, 
-			String contentRating, 
-			String duration,
-			String imdbRating, 
-			String posterUrl, 
-			Date createdDate, 
-			Date releaseDate,
-			double averageRating,
-			List<Genre> genres, 
-			List<Actor> actors,
-			List<Rating> ratings) {
-		super();
+			@NotEmpty(message = "Plot cannot be empty") String plot, String contentRating, String duration,
+			String imdbRating, String posterUrl, LocalDate createdDate, LocalDate releaseDate, double averageRating,
+			List<Genre> genres, List<Actor> actors, List<Rating> ratings) {
 		this.title = title;
 		this.year = year;
 		this.plot = plot;
@@ -93,32 +84,34 @@ public class MovieDTO {
 		this.ratings = ratings;
 		this.averageRating = averageRating;
 	}
-	
-	public MovieDTO(Movie fromMovie) {
-		super();
-		this.id = fromMovie.getId();
-		this.title = fromMovie.getTitle();
-		this.year = fromMovie.getYear();
-		this.plot = fromMovie.getPlot();
-		this.contentRating = fromMovie.getContentRating();
-		this.duration = fromMovie.getDuration();
-		this.imdbRating = fromMovie.getImdbRating();
-		this.posterUrl = fromMovie.getPosterUrl();
-		this.createdDate = fromMovie.getCreated();
-		this.releaseDate = fromMovie.getReleaseDate();
-		this.genres = fromMovie.getGenres();
-		this.actors = fromMovie.getActors();
-		this.ratings = fromMovie.getRatings();
-		this.averageRating = fromMovie.getAverageRating();
-	}
 
+	public MovieDTO(Movie fromMovie) {
+		if (fromMovie != null) {
+			this.id = fromMovie.getId();
+			this.title = fromMovie.getTitle();
+			this.year = fromMovie.getYear();
+			this.plot = fromMovie.getPlot();
+			this.contentRating = fromMovie.getContentRating();
+			this.duration = fromMovie.getDuration();
+			this.imdbRating = fromMovie.getImdbRating();
+			this.posterUrl = fromMovie.getPosterUrl();
+			this.createdDate = fromMovie.getCreated();
+			this.releaseDate = fromMovie.getReleaseDate();
+			this.genres = fromMovie.getGenres();
+			this.actors = fromMovie.getActors();
+			this.ratings = fromMovie.getRatings();
+			this.averageRating = fromMovie.getAverageRating();
+		}
+	}
 
 	public Long getId() {
 		return id;
 	}
+
 	public void setId(Long id) {
 		this.id = id;
 	}
+
 	public String getTitle() {
 		return title;
 	}
@@ -175,19 +168,19 @@ public class MovieDTO {
 		this.posterUrl = posterUrl;
 	}
 
-	public Date getCreatedDate() {
+	public LocalDate getCreatedDate() {
 		return createdDate;
 	}
 
-	public void setCreatedDate(Date createdDate) {
+	public void setCreatedDate(LocalDate createdDate) {
 		this.createdDate = createdDate;
 	}
 
-	public Date getReleaseDate() {
+	public LocalDate getReleaseDate() {
 		return releaseDate;
 	}
 
-	public void setReleaseDate(Date releaseDate) {
+	public void setReleaseDate(LocalDate releaseDate) {
 		this.releaseDate = releaseDate;
 	}
 

@@ -4,7 +4,7 @@ import StarRatingComponent from 'react-star-rating-component';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import {vote, loadComments} from '../../pages/home/actions';
+import { vote, loadComments, postComment } from '../../pages/home/actions';
 import '../../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import './style.css';
 
@@ -21,6 +21,7 @@ const customStyles = {
         bottom: 'auto',
         marginRight: '-50%',
         transform: 'translate(-50%, -50%)',
+        maxWidth: '50%',
     },
     overlay: {
         backgroundColor: 'rgba(0, 0, 0, 1)'
@@ -28,7 +29,7 @@ const customStyles = {
 };
 class MovieModal extends Component {
 
-    constructor(props){
+    constructor(props) {
         super(props);
         this.state = {
             selectedMovie: {},
@@ -39,17 +40,16 @@ class MovieModal extends Component {
     * selected movie has been updated in the store.
     */
     componentDidUpdate() {
-        const {movieId} = this.props;
+        const { movieId } = this.props;
         const content = this.props.movieData.content || [];
         const selectedMovie = content.find(movie => {
             return movie.id === movieId;
         });
-        if(this.state.selectedMovie === selectedMovie)
+        if (this.state.selectedMovie === selectedMovie)
             return;
 
-        if(selectedMovie){
-            this.setState({selectedMovie});
-            this.props.actions.loadComments(movieId, 0, 10);
+        if (selectedMovie) {
+            this.setState({ selectedMovie });
         }
     }
     onVote = (nextValue, movieId) => {
@@ -57,6 +57,17 @@ class MovieModal extends Component {
             this.props.actions.vote(nextValue, movieId);
         }
     }
+    onPostComment = (event) => {
+        event.preventDefault();
+        let form = document.getElementById("newCommentForm");
+        //Validate ?
+        let formData = new FormData(form);
+        this.props.actions.postComment(formData, this.state.selectedMovie.id);
+        //Clear field
+        document.getElementById("title").value = "";
+        document.getElementById("comment").value = "";
+    }
+
     render() {
         const { modalIsOpen, movieId, closeModal } = this.props;
         const movie = this.state.selectedMovie;
@@ -64,13 +75,7 @@ class MovieModal extends Component {
         const commentEntry = this.props.comments.find(entry => entry.movieId === movieId) || {};
         const commentData = commentEntry.data || {};
         const commentList = commentData.content || [];
-        const commentView = commentList.map(entry => {
-            return <tr>
-                <td>{entry.author.name} {entry.author.lastname}</td>
-                <td>{entry.title}</td>
-                <td>{entry.comment}</td>
-            </tr>
-        });
+
         const genres = movie.genres || [];
         const actors = movie.actors || [];
 
@@ -156,18 +161,19 @@ class MovieModal extends Component {
                                                 editing={true} /* is component available for editing, default `true` */
                                                 onStarClick={(nextValue, prevValue, name) => { this.onVote(nextValue, movie.id); }} /* on icon click handler */
                                             />
-                                            <span style={{ marginLeft: '5px' }}>({currentRating.rating}/10)</span>
+                                            <span style={{ marginLeft: '5px' }}>({currentRating.rating || 0}/10)</span>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div>
-                            <table>
-                                <tbody>
-                                    {commentView}
-                                </tbody>
-                            </table>
+                        <span className="tileHeader" style={{margin: '10px'}}>Comments:</span>
+                        <div className="commentListContainer">
+                            {commentView(commentList)}
+                        </div>
+                        <div style={{ alignSelf: 'flex-start'}}>
+                            <span>Post a comment:</span>
+                            {newCommentView(this.onPostComment)}
                         </div>
                     </div>
                 </Modal>
@@ -176,17 +182,53 @@ class MovieModal extends Component {
     }
 }
 
+const commentView = (commentList) =>
+    commentList.map((entry, index) => {
+        return (
+            <div key={index} className="commentContainer">
+                <div className="commentBodyContainer">
+                    <div className="commentHighlightedText">{entry.author.name} {entry.author.lastname}</div>
+                    <div className="commentItalicText">{entry.created}</div>
+                </div>
+                <div className="commentBodyContainer">
+                    <div className="commentHighlightedText">{entry.title}</div>
+                    <div>{entry.comment}</div>
+                </div>
+            </div>
+        );
+    });
+const newCommentView = (onPostComment) =>
+    <div>
+        <form method="POST" name="newCommentForm" id="newCommentForm">
+            <table>
+                <tbody>
+                    <tr>
+                        <td><input style={{ width: '100%' }} type="text" name="title" id="title" placeholder="Title" /></td>
+                    </tr>
+                    <tr>
+                        <td><textarea name="comment" id="comment" rows="5" maxLength="150"   placeholder="Comment" /></td>
+                    </tr>
+                    <tr>
+                        <td><input type="submit"
+                            name="submitComment" value="Post comment" onClick={onPostComment} /></td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+
+
 export default connect(
     (state) => ({
-            requestConfig: state.movieReducer.requestConfig,
-            movieData: state.movieReducer.movieData || {},
-            loading: state.movieReducer.loading,
-            userRatings: state.movieReducer.userRatings || [],
-            comments: state.movieReducer.comments || []
+        requestConfig: state.movieReducer.requestConfig,
+        movieData: state.movieReducer.movieData || {},
+        loading: state.movieReducer.loading,
+        userRatings: state.movieReducer.userRatings || [],
+        comments: state.movieReducer.comments || []
     }),
     (dispatch) => ({
         actions: bindActionCreators(Object.assign({},
-            {vote, loadComments}), dispatch)
+            { vote, loadComments, postComment }), dispatch)
 
     })
 )(MovieModal)

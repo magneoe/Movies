@@ -51,5 +51,4 @@ public class Rating {
 	public void setRating(Integer rating) {
 		this.rating = rating;
 	}
-	
 }

@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNotNull;
 import java.sql.Date;
 import java.util.List;
 
-import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
 import org.junit.After;
 import org.junit.Before;
@@ -22,7 +21,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import no.itminds.movies.model.Movie;
-import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.repository.MovieRepository;
 
 @RunWith(SpringRunner.class)
@@ -71,7 +69,7 @@ public class MovieRepositoryTest {
 		//Then
 		assertNotNull(actualMovie);
 		assertThat(actualMovie.getTitle(), IsEqual.equalTo(MOVIE_TITLE));
-		assertThat(actualMovie.getReleaseDate().getTime(), IsEqual.equalTo(Date.valueOf("1994-10-21").getTime()));
+		assertThat(Date.valueOf(actualMovie.getReleaseDate()).getTime(), IsEqual.equalTo(Date.valueOf("1994-10-21").getTime()));
 		
 	}
 
