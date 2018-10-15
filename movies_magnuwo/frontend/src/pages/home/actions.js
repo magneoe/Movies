@@ -296,35 +296,6 @@ export const movieReducer = (state = {}, action) => {
             }
 
         case POST_COMMENT_SUCCESS:
-            /*let updatedCommentsContent = [];
-            let updatedComments = [];
-
-            const comments = state.comments || [];
-            const newComment = action.result || {};
-            const indexOfMovieComments = comments.findIndex(entry => entry.movieId === newComment.movieId);
-            if(indexOfMovieComments !== -1) {
-                //Updates the commentsContent array - immutable
-                updatedCommentsContent =
-                    insertItem(comments[indexOfMovieComments].data.content,
-                                {index: 0, item: newComment});
-                //Updates the comment array - immutable
-               updatedComments = updateObjectInArray(comments,
-                    {index: indexOfMovieComments, item: {
-                        ...comments[indexOfMovieComments],
-                        data: {
-                            ...comments[indexOfMovieComments].data,
-                            content: updatedCommentsContent,
-                            numberOfElements: comments[indexOfMovieComments].data.numberOfElements+1,
-                            number: (comments[indexOfMovieComments].data.numberOfElements === 0) ?
-                            totalPages:
-                        }
-                    }})
-            }
-            return {
-                ...state,
-                loading: false,
-                comments: updatedComments
-            }*/
             return {
                 ...state,
                 loading: false,
