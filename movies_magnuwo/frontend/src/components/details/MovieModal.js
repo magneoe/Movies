@@ -40,6 +40,7 @@ class MovieModal extends Component {
     componentDidUpdate(prevProps) {
         const movieIdNew  = this.props.movieId;
         const movieIdOld = prevProps.movieId;
+        const {user} = this.props;
 
         const content = this.props.movieData.content || [];
         const selectedMovie = content.find(movie => {
@@ -49,8 +50,10 @@ class MovieModal extends Component {
             return;
 
         if (selectedMovie) {
-            this.props.actions.loadRating(movieIdNew);
             this.props.actions.loadComments(movieIdNew, 0);
+            if(user){
+                this.props.actions.loadRating(movieIdNew);
+            }
         }
     }
     onVote = (nextValue, movieId) => {
