@@ -160,9 +160,8 @@ public class MovieController {
 	public Page<CommentDTO> comments(@RequestParam Long movieId,
 			@PageableDefault(page = 0, size = 10) Pageable pageable,
 			HttpServletRequest request) {
-		User existingUser = getCurrentUser(request);
 		Page<Comment> comments = movieService.getComments(movieId, pageable);
-		return comments.map(comment -> new CommentDTO(comment.getTitle(), comment.getComment(), movieId, comment.getCreated(), existingUser));
+		return comments.map(comment -> new CommentDTO(comment.getTitle(), comment.getComment(), movieId, comment.getCreated(), comment.getAuthor()));
 	}
 
 	/**
