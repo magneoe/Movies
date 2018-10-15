@@ -4,7 +4,8 @@ import StarRatingComponent from 'react-star-rating-component';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
-import { vote, loadComments, postComment } from '../../pages/home/actions';
+import { PageInfo } from '../';
+import { vote, loadComments, postComment, loadRating } from '../../pages/home/actions';
 import '../../../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import './style.css';
 
@@ -31,29 +32,29 @@ class MovieModal extends Component {
 
     constructor(props) {
         super(props);
-        this.state = {
-            selectedMovie: {},
-        }
     }
     /*
     * Should trigger rerendering whenever the
     * selected movie has been updated in the store.
     */
-    componentDidUpdate() {
-        const { movieId } = this.props;
+    componentDidUpdate(prevProps) {
+        const movieIdNew  = this.props.movieId;
+        const movieIdOld = prevProps.movieId;
+
         const content = this.props.movieData.content || [];
         const selectedMovie = content.find(movie => {
-            return movie.id === movieId;
+            return movie.id === movieIdNew;
         });
-        if (this.state.selectedMovie === selectedMovie)
+        if (movieIdNew === movieIdOld)
             return;
 
         if (selectedMovie) {
-            this.setState({ selectedMovie });
+            this.props.actions.loadRating(movieIdNew);
+            this.props.actions.loadComments(movieIdNew, 0);
         }
     }
     onVote = (nextValue, movieId) => {
-        if (nextValue) {
+        if (nextValue && this.props.user) {
             this.props.actions.vote(nextValue, movieId);
         }
     }
@@ -62,15 +63,40 @@ class MovieModal extends Component {
         let form = document.getElementById("newCommentForm");
         //Validate ?
         let formData = new FormData(form);
-        this.props.actions.postComment(formData, this.state.selectedMovie.id);
+        const movie = this.getMovieById(this.props.movieId);
+        this.props.actions.postComment(formData, movie.id, this.getPageInfo(movie.id).number);
         //Clear field
         document.getElementById("title").value = "";
         document.getElementById("comment").value = "";
     }
+    getMovieById = (movieId) => {
+        if(!movieId)
+            return {};
+        const movieData = this.props.movieData || {};
+        const content = movieData.content || [];
+        return content.find(entry => entry.id === movieId) || {};
+    }
+    onNext = (currentPage, totalPages) => {
+        const {movieId} = this.props;
+        if (currentPage + 1 < totalPages && movieId) {
+            this.props.actions.loadComments(movieId, currentPage + 1);
+        }
+    }
+    onPrev = (currentPage) => {
+        const {movieId} = this.props;
+        if (currentPage - 1 >= 0 && movieId) {
+            this.props.actions.loadComments(movieId, currentPage - 1);
+        }
+    }
+    getPageInfo = (movieId) => {
+        const commentsForSelectedMovie = this.props.comments.find(entry => entry.movieId === movieId);
+        return (commentsForSelectedMovie || {}).data || { currentPage: 0, totalPages: 0, numberOfElements: 0, number: 0 };
+    }
 
     render() {
         const { modalIsOpen, movieId, closeModal } = this.props;
-        const movie = this.state.selectedMovie;
+
+        const movie = this.getMovieById(movieId);
         const { year, posterUrl, duration, averageRating, createdDate, releaseDate, plot } = movie || {};
         const commentEntry = this.props.comments.find(entry => entry.movieId === movieId) || {};
         const commentData = commentEntry.data || {};
@@ -84,6 +110,9 @@ class MovieModal extends Component {
 
         const genreView = genres.map(genre => genre.name).join(', ');
         const actorsView = actors.map(actor => actor.name).join(', ');
+
+
+        const { number, totalPages, numberOfElements } = this.getPageInfo(movieId);
         return (
             <div>
                 <Modal
@@ -152,29 +181,20 @@ class MovieModal extends Component {
                                         <td colSpan="2"><span className="tileHeader">You rated this movie:</span></td>
                                     </tr>
                                     <tr>
-                                        <td colSpan="2">
-                                            <StarRatingComponent
-                                                name="avgRating"
-                                                value={currentRating.rating} /* number of selected icon (`0` - none, `1` - first) */
-                                                starCount={10} /* number of icons in rating, default `5` */
-                                                emptyStarColor="#e6e6e6" /* color of non-selected icons, default `#333` */
-                                                editing={true} /* is component available for editing, default `true` */
-                                                onStarClick={(nextValue, prevValue, name) => { this.onVote(nextValue, movie.id); }} /* on icon click handler */
-                                            />
-                                            <span style={{ marginLeft: '5px' }}>({currentRating.rating || 0}/10)</span>
-                                        </td>
+                                        <td colSpan="2">{userRatingView(currentRating, this.onVote, movie, this.props.user)}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <span className="tileHeader" style={{margin: '10px'}}>Comments:</span>
+                        <span className="tileHeader" style={{ margin: '10px' }}>Comments:</span>
+                        {number === 0 && <div style={{ alignSelf: 'flex-start' }}>
+                            <span>Post a comment:</span>
+                            {newCommentView(this.onPostComment, this.props.user)}
+                        </div>}
                         <div className="commentListContainer">
                             {commentView(commentList)}
                         </div>
-                        <div style={{ alignSelf: 'flex-start'}}>
-                            <span>Post a comment:</span>
-                            {newCommentView(this.onPostComment)}
-                        </div>
+                        <PageInfo onPrev={this.onPrev} onNext={this.onNext} currentPage={number} totalPages={totalPages} numberOfElements={numberOfElements} />
                     </div>
                 </Modal>
             </div>
@@ -184,39 +204,62 @@ class MovieModal extends Component {
 
 const commentView = (commentList) =>
     commentList.map((entry, index) => {
+        const author = entry.author || {};
         return (
             <div key={index} className="commentContainer">
                 <div className="commentBodyContainer">
-                    <div className="commentHighlightedText">{entry.author.name} {entry.author.lastname}</div>
-                    <div className="commentItalicText">{entry.created}</div>
+                    <div className="commentHighlightedText">{author.name || ''} {author.lastname || ''}</div>
+                    <div className="commentItalicText">{entry.created || ''}</div>
                 </div>
                 <div className="commentBodyContainer">
-                    <div className="commentHighlightedText">{entry.title}</div>
+                    <div className="commentHighlightedText">{entry.title || ''}</div>
                     <div>{entry.comment}</div>
                 </div>
             </div>
         );
     });
-const newCommentView = (onPostComment) =>
-    <div>
-        <form method="POST" name="newCommentForm" id="newCommentForm">
-            <table>
-                <tbody>
-                    <tr>
-                        <td><input style={{ width: '100%' }} type="text" name="title" id="title" placeholder="Title" /></td>
-                    </tr>
-                    <tr>
-                        <td><textarea name="comment" id="comment" rows="5" maxLength="150"   placeholder="Comment" /></td>
-                    </tr>
-                    <tr>
-                        <td><input type="submit"
-                            name="submitComment" value="Post comment" onClick={onPostComment} /></td>
-                    </tr>
-                </tbody>
-            </table>
-        </form>
-    </div>
-
+const newCommentView = (onPostComment, user) => {
+    if (user && user.sessionId) {
+        return (
+            <div>
+                <form method="POST" name="newCommentForm" id="newCommentForm">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td><input style={{ width: '100%' }} type="text" name="title" id="title" placeholder="Title" /></td>
+                            </tr>
+                            <tr>
+                                <td><textarea name="comment" id="comment" rows="5" maxLength="150" placeholder="Comment" /></td>
+                            </tr>
+                            <tr>
+                                <td><input type="submit"
+                                    name="submitComment" value="Post comment" onClick={onPostComment} /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
+            </div>);
+    }
+    return (<div><p>Log in to post a comment</p></div>);
+}
+const userRatingView = (currentRating, onVote, movie, user) => {
+    if (user && user.sessionId && currentRating) {
+        return (
+            <div>
+                <StarRatingComponent
+                    name="avgRating"
+                    value={currentRating.rating} /* number of selected icon (`0` - none, `1` - first) */
+                    starCount={10} /* number of icons in rating, default `5` */
+                    emptyStarColor="#e6e6e6" /* color of non-selected icons, default `#333` */
+                    editing={true} /* is component available for editing, default `true` */
+                    onStarClick={(nextValue, prevValue, name) => { onVote(nextValue, movie.id); }} /* on icon click handler */
+                />
+                <span style={{ marginLeft: '5px' }}>({currentRating.rating || 0}/10)</span>
+            </div>
+        );
+    }
+    return (<div><p>Log in to vote this movie</p></div>)
+}
 
 export default connect(
     (state) => ({
@@ -224,11 +267,12 @@ export default connect(
         movieData: state.movieReducer.movieData || {},
         loading: state.movieReducer.loading,
         userRatings: state.movieReducer.userRatings || [],
-        comments: state.movieReducer.comments || []
+        comments: state.movieReducer.comments || [],
+        user: state.loginReducer.user,
     }),
     (dispatch) => ({
         actions: bindActionCreators(Object.assign({},
-            { vote, loadComments, postComment }), dispatch)
+            { vote, loadComments, postComment, loadRating }), dispatch)
 
     })
 )(MovieModal)

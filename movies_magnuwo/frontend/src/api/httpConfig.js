@@ -10,7 +10,9 @@ let instance = axios.create({
   // request header
   instance.interceptors.request.use((config) => {
     const apiToken = sessionStorage.getItem(SESSION_ID);
-    config.headers = { 'Authorization': apiToken }
+    if(apiToken){
+      config.headers = { 'Authorization': apiToken }
+    }
     return config
   }, error => {
     return Promise.reject(error)

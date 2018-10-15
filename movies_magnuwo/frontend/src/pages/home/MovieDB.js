@@ -23,11 +23,6 @@ class MovieDB extends Component {
         const selectedMovie = this.props.movieData.content.find(movie => {
             return movie.id === movieId;
         });
-        //Checks if the user rating for this movie has been loaded
-        if (!this.props.userRatings.find(userRating => userRating.movieId === movieId)) {
-            this.props.actions.loadRating(selectedMovie.id);
-        }
-        this.props.actions.loadComments(movieId, 0, 10);
         this.setState({ modalIsOpen: true, selectedMovieId: selectedMovie.id });
     }
 

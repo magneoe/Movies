@@ -1,10 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Route } from 'react-router-dom';
+import { Router, Route } from 'react-router-dom';
+
 import { Provider } from 'react-redux';
+import { routerMiddleware } from 'react-router-redux'
 import { createStore, applyMiddleware, compose } from 'redux';
 import { createEpicMiddleware } from 'redux-observable';
 import thunk from 'redux-thunk';
+import { createBrowserHistory } from 'history';
 
 import RootReducer from './store';
 import App from './App';
@@ -14,9 +17,10 @@ import {DIRECTION_ASC, SORT_OPTIONS} from './pages/home/actions';
 
 import * as serviceWorker from './serviceWorker';
 
+
 const INITIAL_STATE = {
     loginReducer: {
-        user: {}
+        user: null
     },
     movieReducer: {
         loading: false,
@@ -28,17 +32,28 @@ const INITIAL_STATE = {
     }
     }
 };
+const history = createBrowserHistory();
 const epicMiddleware = createEpicMiddleware();
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-const store = createStore(RootReducer, INITIAL_STATE,
+
+const middleware = [
+    epicMiddleware,
+    routerMiddleware(history),
+    thunk
+];
+
+const store = createStore(
+    RootReducer,
+    INITIAL_STATE,
     composeEnhancers(
-        applyMiddleware(epicMiddleware, thunk)
+        applyMiddleware(...middleware)
         ));
 epicMiddleware.run(combinedEpics)
 
+
 ReactDOM.render(
     <Provider store={store}>
-        <Router>
+        <Router history={history}>
             <div>
                 <Route exact path='/' component={App}>
                 </Route>

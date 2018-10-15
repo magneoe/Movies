@@ -27,6 +27,7 @@ export const LOAD_RATING_FAILURE = "MOVIES/LOAD_RATING_FAILURE";
 export const DIRECTION_ASC = 0;
 export const DIRECTION_DESC = 1;
 export const SORT_OPTIONS = ["title", "year", "duration"];
+const DEFAULT_COMMENT_PAGE_SIZE = 5;
 
 
 export function loadMovies(page, size, sort, direction) {
@@ -50,7 +51,7 @@ export function loadMoviesFailure(error) {
         error
     }
 }
-export function loadComments(movieId, page, size) {
+export function loadComments(movieId, page, size = DEFAULT_COMMENT_PAGE_SIZE) {
     return {
         type: LOAD_COMMENTS,
         movieId,
@@ -72,11 +73,12 @@ export function loadCommentsFailure(error) {
     }
 }
 
-export function postComment(formData, movieId) {
+export function postComment(formData, movieId, currentPage) {
     return {
         type: POST_COMMENT,
         formData,
         movieId,
+        currentPage
     }
 }
 export function postCommentSuccess(result) {
@@ -158,7 +160,7 @@ export const loadMoviesEpic = actions$ =>
 export const voteEpic = actions$ =>
     actions$.pipe(
         ofType(VOTE),
-        switchMap(action =>
+        mergeMap(action =>
             from(voteMovieApi(action.rating, action.movieId)).pipe(
                 map(result => voteSuccess(result)),
                 concat(of(loadRatingSuccess({ rating: action.rating, movieId: action.movieId })))
@@ -186,8 +188,14 @@ export const loadCommentsEpic = actions$ =>
 export const postCommentEpic = actions$ =>
                 actions$.pipe(
                     ofType(POST_COMMENT),
-                    switchMap(action => from(postCommentApi(action.formData, action.movieId))),
-                    map(result => postCommentSuccess(result)),
+                    mergeMap(action =>
+                            from(postCommentApi(action.formData, action.movieId)).pipe(
+                                map(result => postCommentSuccess(result)),
+                                concat(of(loadComments(action.movieId, action.currentPage)))
+                            )
+                        ),
+                    // switchMap(action => from(postCommentApi(action.formData, action.movieId))),
+                    // map(result => postCommentSuccess(result)),
                     catchError(error => of(postCommentFailure(handleError(error))))
                 );
 
@@ -231,7 +239,7 @@ export const movieReducer = (state = {}, action) => {
             }
             else {
                 updatedCommentsTest = updateObjectInArray(currentComments,
-                    {index: indexOfCurrentComments, item: currentComments[indexOfCurrentComments]});
+                    {index: indexOfCurrentComments, item: action.result});
             }
 
             return {
@@ -288,7 +296,7 @@ export const movieReducer = (state = {}, action) => {
             }
 
         case POST_COMMENT_SUCCESS:
-            let updatedCommentsContent = [];
+            /*let updatedCommentsContent = [];
             let updatedComments = [];
 
             const comments = state.comments || [];
@@ -306,6 +314,9 @@ export const movieReducer = (state = {}, action) => {
                         data: {
                             ...comments[indexOfMovieComments].data,
                             content: updatedCommentsContent,
+                            numberOfElements: comments[indexOfMovieComments].data.numberOfElements+1,
+                            number: (comments[indexOfMovieComments].data.numberOfElements === 0) ?
+                            totalPages:
                         }
                     }})
             }
@@ -313,6 +324,10 @@ export const movieReducer = (state = {}, action) => {
                 ...state,
                 loading: false,
                 comments: updatedComments
+            }*/
+            return {
+                ...state,
+                loading: false,
             }
         default:
             return state;
