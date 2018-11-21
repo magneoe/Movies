@@ -20,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -39,7 +40,8 @@ import no.itminds.movies.model.dto.VoteDTO;
 import no.itminds.movies.model.login.User;
 import no.itminds.movies.service.impl.TokenAuthenticationService;
 
-@TestPropertySource(locations = "classpath:test-integration.properties")
+@ActiveProfiles("test")
+@TestPropertySource(locations = {"classpath:test-integration.properties"})
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, classes = App.class)
 @AutoConfigureMockMvc(secure=false)
