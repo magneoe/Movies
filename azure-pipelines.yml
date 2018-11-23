@@ -18,6 +18,7 @@ steps:
     testResultsFiles: '**/TEST-*.xml'
     goals: 'package'
     artifactName: 'drop'
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
 
 trigger:
     - rest-api
