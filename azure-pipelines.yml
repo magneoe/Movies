@@ -17,6 +17,7 @@ steps:
     publishJUnitResults: false
     testResultsFiles: '**/TEST-*.xml'
     goals: 'package'
+    artifactName: 'drop'
 
 trigger:
     - rest-api
