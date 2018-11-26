@@ -52,7 +52,7 @@ import no.itminds.movies.service.impl.TokenAuthenticationService;
  * @author Magnus WO
  *
  */
-@CrossOrigin(origins="${api.allowedOrigins}")
+@CrossOrigin(origins="*")
 @RestController
 @RequestMapping("api/")
 public class MovieController {
