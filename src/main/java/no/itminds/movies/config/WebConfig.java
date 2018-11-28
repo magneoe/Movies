@@ -28,25 +28,31 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 //}
 
 
-@Configuration
-@EnableWebMvc
-public class WebConfig implements WebMvcConfigurer {
-
-	@Bean
-	public static PropertySourcesPlaceholderConfigurer placeholderConfigurer() {
-	    return new PropertySourcesPlaceholderConfigurer();
-	}
-	
-	@Value("${ALLOWED_ORIGINS}")
-	private String allowedOrigins;
-	
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-
-        registry.addMapping("/api/**")
-            .allowedOrigins(allowedOrigins)
-            .allowedMethods("PUT", "DELETE", "GET", "POST")
-            .allowedHeaders("*")
-            .allowCredentials(true).maxAge(3600);
-    }
-}
+//@Configuration
+//@EnableWebMvc
+//public class WebConfig implements WebMvcConfigurer {
+//
+//	@Bean
+//	public static PropertySourcesPlaceholderConfigurer placeholderConfigurer() {
+//	    return new PropertySourcesPlaceholderConfigurer();
+//	}
+//	
+//	@Value("${ALLOWED_ORIGINS}")
+//	private String allowedOrigins;
+//	
+//    @Override
+//    public void addCorsMappings(CorsRegistry registry) {
+//
+//        registry.addMapping("/api/**")
+//            .allowedOrigins(allowedOrigins)
+//            .allowedMethods("PUT", "DELETE", "GET", "POST")
+//            .allowedHeaders("*")
+//            .allowCredentials(true).maxAge(3600);
+//        
+//        registry.addMapping("/login")
+//        .allowedOrigins(allowedOrigins)
+//        .allowedMethods("POST")
+//        .allowedHeaders("*")
+//        .allowCredentials(true).maxAge(3600);
+//    }
+//}
