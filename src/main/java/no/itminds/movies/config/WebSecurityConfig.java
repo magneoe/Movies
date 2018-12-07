@@ -3,6 +3,8 @@ package no.itminds.movies.config;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,25 +46,27 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.authorizeRequests()
-				.antMatchers(HttpMethod.GET, "/", "/console/**", "/api/movies/getAll", "/api/movies/comments", "/api/genres/getAll",
-						"/api/movies/{\\d+}", "/api/actors/getAll", "/api/movies/comments?{*}", "/createUser")
-				.permitAll().
-				antMatchers(HttpMethod.POST, "/login/**").
-				permitAll().antMatchers("/api/movies/addMovie")
-				.hasRole("ADMIN").anyRequest().authenticated().and()
-				.addFilterBefore(new JWTLoginFilter("/login", authenticationManager(), tokenAuthService),
-						UsernamePasswordAuthenticationFilter.class)
+		http
+			.csrf().disable()
+				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+			.and()
+				.exceptionHandling().authenticationEntryPoint((req, res, error) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+			.and()
+				.addFilterBefore(new JWTLoginFilter("/login", authenticationManager(), tokenAuthService), UsernamePasswordAuthenticationFilter.class)
 				.addFilterBefore(new JWTAuthenticationFilter(tokenAuthService),
 						UsernamePasswordAuthenticationFilter.class)
-				.exceptionHandling().authenticationEntryPoint(new CustomAuthenticationEntryPoint());
-		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-		logger.debug(http.toString());
-		http.httpBasic().disable();
-		// Enable h2 login
-		http.headers().frameOptions().disable();
-		http.csrf().disable();
+			.authorizeRequests()
+			.antMatchers("/", "/console/**", "/api/movies/getAll", "/api/genres/getAll", "/api/movies/comments", 
+					 "/api/actors/getAll", "/api/movies/{[0-9]+}/", "/api/movies/comments?{*}", "/createUser")
+				.permitAll()
+			.antMatchers(HttpMethod.POST, "/login/**").
+				permitAll()
+			.antMatchers("/api/movies/addMovie")
+				.hasRole("ADMIN").
+			anyRequest().authenticated();
+		
 		http.cors();
+		http.httpBasic().disable();
 	}
 
 	@Bean

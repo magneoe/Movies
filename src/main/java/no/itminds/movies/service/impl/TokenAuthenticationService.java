@@ -13,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -44,6 +45,9 @@ public class TokenAuthenticationService {
 			}
 			catch(MalformedJwtException mjwtex) {
 				logger.warn("Unable to parse JWT");
+			}
+			catch(ExpiredJwtException exJwtEx) {
+				logger.warn(exJwtEx.getMessage());
 			}
 			return user != null ? new UsernamePasswordAuthenticationToken(user, null, emptyList()) : null;
 		}
