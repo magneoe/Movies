@@ -87,12 +87,12 @@ public class MovieControllerWebIntegrationTest {
 
 	@Test
 	public void testGetDetails() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/movies/2").contentType(MediaType.APPLICATION_JSON_VALUE))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/movies/2/").contentType(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(MockMvcResultMatchers.status().isOk()).andDo(MockMvcResultHandlers.print())
 				.andExpect(jsonPath("$.title", Is.is("Pulp fiction")));
 
 		// Invalid input, not found
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/movies/100").contentType(MediaType.APPLICATION_JSON_VALUE))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/movies/100/").contentType(MediaType.APPLICATION_JSON_VALUE))
 				.andExpect(MockMvcResultMatchers.status().isNotFound());
 
 	}
@@ -132,8 +132,11 @@ public class MovieControllerWebIntegrationTest {
 				"9.1", "testUrl", dateNow, dateNow, 4.0, null, null, null);
 
 		String SUBMITTED_MOVIE_JSON = jsonTesterMovieDTO.write(SUBMITTED_MOVIE_DTO).getJson();
-
-		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/addMovie").contentType(MediaType.APPLICATION_JSON)
+		final String token = obtainAccessToken(testUser.getEmail(), testUser.getPassword());
+		
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/addMovie/")
+				.contentType(MediaType.APPLICATION_JSON)
+				.header(TokenAuthenticationService.HEADER_STRING, token)
 				.accept(MediaType.APPLICATION_JSON).content(SUBMITTED_MOVIE_JSON))
 				.andExpect(MockMvcResultMatchers.status().isCreated())
 				.andExpect(jsonPath("$.title", Is.is("NewAndExcitingTitle")))
@@ -232,7 +235,7 @@ public class MovieControllerWebIntegrationTest {
 		mockMvc.perform(MockMvcRequestBuilders.post("/api/movies/submitComment")
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_JSON).content(SUBMITTED_COMMENT_JSON))
-				.andExpect(MockMvcResultMatchers.status().isBadRequest()).andDo(MockMvcResultHandlers.print());
+				.andExpect(MockMvcResultMatchers.status().isUnauthorized()).andDo(MockMvcResultHandlers.print());
 	}
 
 	// @WithMockUser(value = "test@gmail.com")

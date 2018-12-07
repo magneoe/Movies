@@ -22,7 +22,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 public class TokenAuthenticationService {
 	static final Logger logger = LoggerFactory.getLogger(TokenAuthenticationService.class);
 	
-	static final long EXPIRATIONTIME = 1800_000; //30 mins 
+	static final long EXPIRATIONTIME = 90000; //30 mins 
 	private static final String SECRET = "ThisIsASecret";
 	public static final String TOKEN_PREFIX = "Bearer";
 	public static final String HEADER_STRING = "Authorization";
