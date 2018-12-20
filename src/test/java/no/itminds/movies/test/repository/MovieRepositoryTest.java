@@ -14,7 +14,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -28,9 +27,6 @@ import no.itminds.movies.repository.MovieRepository;
 @TestPropertySource(
 		  locations = "classpath:test-integration.properties")
 public class MovieRepositoryTest {
-
-	@Autowired
-	private TestEntityManager entityManager;
 	
 	@Autowired
 	private MovieRepository movieRepository;

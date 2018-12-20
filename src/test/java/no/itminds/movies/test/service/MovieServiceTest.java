@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
 
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsEqual;
@@ -101,7 +99,7 @@ public class MovieServiceTest {
 
 		// Then
 		List<Movie> actualMovies = movieService.getAll();
-		Mockito.verify(movieRepo).findAll();
+		Mockito.verify(movieRepo, Mockito.times(1)).findAll();
 
 		assertNotNull(actualMovies);
 		assertNotNull(testMovies);
@@ -333,7 +331,6 @@ public class MovieServiceTest {
 		expectedException.expect(IllegalArgumentException.class);
 		persistedMovie = movieService.save(null);
 		assertNull(persistedMovie);
-		
 	}
 
 }

@@ -1,4 +1,4 @@
-package no.itminds.movies.config;
+package no.itminds.movies.filters;
 
 import java.io.IOException;
 
@@ -38,7 +38,6 @@ public class JWTAuthenticationFilter extends GenericFilterBean {
 			else
 				SecurityContextHolder.clearContext();
 		    chain.doFilter(request,response);
-		
 	}
 	
 }

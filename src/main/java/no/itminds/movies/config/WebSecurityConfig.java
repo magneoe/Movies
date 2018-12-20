@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import no.itminds.movies.filters.JWTAuthenticationFilter;
+import no.itminds.movies.filters.JWTLoginFilter;
+import no.itminds.movies.filters.MyCustomFilter;
 import no.itminds.movies.service.UserService;
 import no.itminds.movies.service.impl.TokenAuthenticationService;
 
@@ -33,7 +37,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	private static Logger logger = LoggerFactory.getLogger(WebSecurityConfig.class);
 	@Autowired
 	private UserService userDetailsService;
-
+	
 	@Autowired
 	private TokenAuthenticationService tokenAuthService;
 	
@@ -55,9 +59,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 				.addFilterBefore(new JWTLoginFilter("/login", authenticationManager(), tokenAuthService), UsernamePasswordAuthenticationFilter.class)
 				.addFilterBefore(new JWTAuthenticationFilter(tokenAuthService),
 						UsernamePasswordAuthenticationFilter.class)
+				//.addFilterBefore(new MyCustomFilter(), JWTLoginFilter.class)
 			.authorizeRequests()
 			.antMatchers("/", "/console/**", "/api/movies/getAll", "/api/genres/getAll", "/api/movies/comments", 
-					 "/api/actors/getAll", "/api/movies/{[0-9]+}/", "/api/movies/comments?{*}", "/createUser")
+					 "/api/actors/getAll", "/api/movies/{[0-9]+}/**", "/api/movies/comments?{*}", "/createUser")
 				.permitAll()
 			.antMatchers(HttpMethod.POST, "/login/**").
 				permitAll()
