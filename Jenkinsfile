@@ -11,7 +11,7 @@ node {
         /* This builds the actual image; synonymous to
          * docker build on the command line */
 	bat 'echo "Building image"'
-        app = docker.build("movies-dev:backend")
+        app = docker.build("magneoe/movies-dev:backend")
     }
 
     stage('Test image') {
