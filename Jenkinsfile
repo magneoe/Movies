@@ -25,7 +25,7 @@ node {
          * Second, the 'latest' tag.
          * Pushing multiple tags is cheap, as all the layers are reused. */
 	bat 'docker tag magneoe/movies:dev magneoe/movies:dev'
-	bat 'echo "${env.DOCKER_USERNAME}"'
+	bat 'echo ${env.DOCKER_USERNAME}'
 	bat 'docker login -u ${env.DOCKER_USERNAME} -p ${env.DOCKER_PASSWORD}'
         bat 'docker push magneoe/movies:dev'
     }
