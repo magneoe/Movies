@@ -10,8 +10,8 @@ node {
     stage('Build image') {
         /* This builds the actual image; synonymous to
          * docker build on the command line */
-	sh 'echo "Building image"'
-        sh 'docker build -t magneoe/movies:dev'
+	bat 'echo "Building image"'
+        bat 'docker build -t magneoe/movies:dev'
     }
 
     stage('Test image') {
@@ -24,6 +24,6 @@ node {
          * First, the incremental build number from Jenkins
          * Second, the 'latest' tag.
          * Pushing multiple tags is cheap, as all the layers are reused. */
-        sh 'docker push magneoe/movies:dev'
+        bat 'docker push magneoe/movies:dev'
     }
 }
