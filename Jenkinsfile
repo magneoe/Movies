@@ -11,7 +11,7 @@ node {
         /* This builds the actual image; synonymous to
          * docker build on the command line */
 	bat 'echo "Building image"'
-        bat 'docker build -t magneoe/movies:dev'
+        bat 'docker build -t magneoe/movies:dev .'
     }
 
     stage('Test image') {
