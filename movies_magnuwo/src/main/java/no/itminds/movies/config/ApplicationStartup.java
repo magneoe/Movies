@@ -62,7 +62,7 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
 		}
 		
 		User user1 = null;
-		if ((user1 = userRepo.findByEmail("magneoe@gmail.com")) == null) {
+		if ((user1 = userRepo.findByEmail("magneoe@gmail.com").get()) == null) {
 			user1 = new User("magneoe@gmail.com", encoder.encode("password"), "Magnus", "Østeng");
 			user1.addRole(userRole);
 			entityManager.persist(user1);

@@ -19,6 +19,8 @@ import javax.validation.constraints.NotEmpty;
 
 import org.hibernate.validator.constraints.Length;
 
+import no.itminds.movies.model.AuthProvider;
+
 @Entity
 public class User {
 
@@ -49,6 +51,12 @@ public class User {
 	private Set<Role> roles = new HashSet<>();
 	
 	private Timestamp created;
+	
+	private AuthProvider authProvider;
+
+	private String providerId;
+
+	private String imageUrl;
 
 	public User() {}
 	
@@ -165,5 +173,24 @@ public class User {
 		if(user.getEmail() != getEmail())
 			return false;
 		return true;
+	}
+
+	public AuthProvider getProvider() {
+		return this.authProvider;
+	}
+
+	public void setProvider(AuthProvider authProvider) {
+		this.authProvider = authProvider;
+		
+	}
+
+	public void setProviderId(String providerId) {
+		this.providerId = providerId;
+		
+	}
+
+	public void setImageUrl(String imageUrl) {
+		this.imageUrl = imageUrl;
+		
 	}
 }

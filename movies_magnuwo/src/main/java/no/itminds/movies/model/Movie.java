@@ -18,6 +18,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,7 @@ public class Movie {
 	private String orginalTitle;
 	private String storyLine;
 
-	@ManyToMany(cascade = {CascadeType.ALL})
+	@ManyToMany(cascade = { CascadeType.ALL })
 	private List<Actor> actors = new ArrayList<>();
 	private String imdbRating;
 	private String posterUrl;
@@ -57,6 +58,9 @@ public class Movie {
 
 	@OneToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
 	private List<Comment> comments = new ArrayList<>();
+
+	@Transient
+	private Rating userRating;
 
 	public Movie() {
 		averageRating = 0;
@@ -278,9 +282,7 @@ public class Movie {
 		private Date createdDate;
 		private List<Comment> comments;
 
-		private static Logger logger = LoggerFactory.getLogger(MovieBuilder.class);
-
-		public final static String DATE_PATTERN = "dd-MM-yyyy";
+		private final Logger logger = LoggerFactory.getLogger(MovieBuilder.class);
 
 		public MovieBuilder title(String title) {
 			this.title = title;
@@ -362,43 +364,14 @@ public class Movie {
 			return this;
 		}
 
-		public MovieBuilder fromMovieDTO(MovieDTO newMovieDTO, List<Actor> actorReferenceList) {
-			title = newMovieDTO.getTitle();
-			year = newMovieDTO.getYear();
-			genres = newMovieDTO.getGenres();
-			contentRating = newMovieDTO.getContentRating();
-			duration = newMovieDTO.getDuration();
-
-			orginalTitle = newMovieDTO.getOrginalTitle();
-			storyLine = newMovieDTO.getStoryLine();
-
-			String[] actorsAsString = newMovieDTO.getActors();
-			for(String actorName : actorsAsString) {
-				Optional<Actor> actorOpt = actorReferenceList.stream().
-						filter(actor -> actor.getName().equals(actorName)).findFirst();
-				if(actorOpt.isPresent()) {
-					this.actors.add(actorOpt.get());
-				}
-			}
-					
-			imdbRating = newMovieDTO.getImdbRating();
-			posterUrl = newMovieDTO.getPosterUrl();
-			plot = newMovieDTO.getPlot();
-			try {
-				releaseDate = Date.valueOf(
-						LocalDate.parse(newMovieDTO.getReleaseDate(), DateTimeFormatter.ofPattern(DATE_PATTERN)));
-				createdDate = Date.valueOf(
-						LocalDate.parse(newMovieDTO.getCreatedDate(), DateTimeFormatter.ofPattern(DATE_PATTERN)));
-			} catch (Exception ex) {
-				logger.info(ex.getMessage());
-			}
-			return this;
-
-		}
-
 		public Movie build() {
 			return new Movie(this);
 		}
+
+	}
+
+	public void setUserRating(Rating currentRating) {
+		this.userRating = currentRating;
 
 	}
 

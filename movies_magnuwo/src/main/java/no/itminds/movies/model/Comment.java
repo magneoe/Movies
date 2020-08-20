@@ -37,6 +37,13 @@ public class Comment {
 		this.author = author;
 		this.created = new Timestamp(System.currentTimeMillis());
 	}
+	public Comment(String title, String comment, Long id) {
+		this.title = title;
+		this.comment = comment;
+		this.created = new Timestamp(System.currentTimeMillis());
+		this.id = id;
+	}
+	
 	public Long getId() {
 		return id;
 	}

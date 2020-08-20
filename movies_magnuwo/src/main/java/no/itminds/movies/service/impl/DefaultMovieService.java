@@ -13,12 +13,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import no.itminds.movies.exceptions.NotFoundException;
+import no.itminds.movies.model.Actor;
 import no.itminds.movies.model.Comment;
+import no.itminds.movies.model.Genre;
 import no.itminds.movies.model.Movie;
 import no.itminds.movies.model.Rating;
+import no.itminds.movies.model.dto.CommentDTO;
 import no.itminds.movies.model.login.User;
+import no.itminds.movies.repository.ActorRepository;
+import no.itminds.movies.repository.GenreRepository;
 import no.itminds.movies.repository.MovieRepository;
 import no.itminds.movies.service.MovieService;
+import no.itminds.movies.util.CacheManager;
 
 @Service
 public class DefaultMovieService implements MovieService {
@@ -27,14 +33,16 @@ public class DefaultMovieService implements MovieService {
 
 	@Autowired
 	private MovieRepository movieRepo;
+	
+	@Autowired
+	private GenreRepository genreRepo;
+	
+	@Autowired
+	private ActorRepository actorRepo;
 
 	@Autowired
 	private EntityManager entityManager;
 
-	@Override
-	public List<Movie> getAll() {
-		return movieRepo.findAll();
-	}
 
 	@Override
 	public Movie getDetails(Long id) {
@@ -43,12 +51,12 @@ public class DefaultMovieService implements MovieService {
 	}
 
 	@Override
-	public void postComment(User existingUser, String title, String comment, Long movieId) {
+	public void postComment(User existingUser, Comment newComment) {
 		if(existingUser == null)
 			throw new PersistenceException("Unable to post a comment without an author");
-		Movie selectedMovie = movieRepo.findById(movieId)
-				.orElseThrow(() -> new NotFoundException("Movie with id " + movieId + " was not found", null, movieId));
-		Comment newComment = new Comment(title, comment, existingUser);
+		
+		Movie selectedMovie = movieRepo.findById(newComment.getId())
+				.orElseThrow(() -> new NotFoundException("Movie with id " + newComment.getId() + " was not found", null, newComment.getId()));
 		selectedMovie.addComment(newComment);
 
 		movieRepo.saveAndFlush(selectedMovie);
@@ -111,5 +119,26 @@ public class DefaultMovieService implements MovieService {
 
 		newMovie = entityManager.merge(newMovie);
 		return newMovie.getId();
+	}
+	
+	@Override
+	public List<Movie> getMovies() {
+		List<Movie> movies = movieRepo.findAll();
+		CacheManager.setMovies(movies);
+		return movies;
+	}
+
+	@Override
+	public List<Actor> getActors() {
+		List<Actor> actors = actorRepo.findAll();
+		CacheManager.setActors(actors);
+		return actors;
+	}
+
+	@Override
+	public List<Genre> getGenres() {
+		List<Genre> genres = genreRepo.findAll();
+		CacheManager.setGenres(genres);
+		return genres;
 	}
 }

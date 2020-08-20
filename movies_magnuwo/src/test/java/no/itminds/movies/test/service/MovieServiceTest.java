@@ -131,7 +131,7 @@ public class MovieServiceTest {
 		Mockito.when(movieRepo.findById(MOVIE_ID)).thenReturn(mockMovieOpt);
 		Mockito.when(movieRepo.findById(null)).thenThrow(NotFoundException.class);
 		
-		movieService.postComment(user, "Test", "Test2", MOVIE_ID);
+		movieService.postComment(user, new Comment("Test", "Test2", MOVIE_ID));
 		
 		Comment comment = mockMovie.getComments().get(0);
 		//Then
@@ -144,13 +144,13 @@ public class MovieServiceTest {
 		 * Test 2 - 
 		 */
 		expectedException.expect(PersistenceException.class);
-		movieService.postComment(null, "Test", "Test", MOVIE_ID);
+		movieService.postComment(null, new Comment("Test", "Test", MOVIE_ID));
 	
 		/*
 		 * Test 3 - invalid input
 		 */
 		expectedException.expect(NotFoundException.class);
-		movieService.postComment(user, "Test", "Test", null);
+		movieService.postComment(user, new Comment("Test", "Test", new Long(-1)));
 	}
 
 	@Test

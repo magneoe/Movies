@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
 
 import no.itminds.movies.model.Comment;
 import no.itminds.movies.model.Genre;
@@ -20,6 +21,7 @@ public class MovieDTO {
 	private List<Rating> ratings = new ArrayList<>();
 	private String contentRating;
 	private String duration;
+	@Pattern(message="Invalid release date. Must be this pattern: dd-MM-yyyy", regexp="[0-9]{2}-[0-9]{2}-[0-9]{4}")
 	private String releaseDate;
 	private String orginalTitle;
 	private String storyLine;
@@ -28,11 +30,12 @@ public class MovieDTO {
 	private String posterUrl;
 	@NotEmpty(message="Plot cannot be empty")
 	private String plot;
+	@Pattern(message="Invalid release date. Must be this pattern: dd-MM-yyyy", regexp="[0-9]{2}-[0-9]{2}-[0-9]{4}")
 	private String createdDate;
 	private List<Comment> comments = new ArrayList<>();
 	
+	
 	public MovieDTO() {
-		
 	}
 
 	public String getTitle() {
@@ -154,6 +157,4 @@ public class MovieDTO {
 	public void setComments(List<Comment> comments) {
 		this.comments = comments;
 	}
-	
-	
 }

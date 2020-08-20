@@ -1,74 +1,109 @@
 package no.itminds.movies.model.login;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
-public class UserPrincipal implements UserDetails {
+public class UserPrincipal implements UserDetails, OAuth2User {
 
-	private static Logger logger = LoggerFactory.getLogger(UserPrincipal.class);
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -1952225599199212525L;
-	private Collection<SimpleGrantedAuthority> authorities;
+	private static final long serialVersionUID = -8567050568559858735L;
+	private static Logger logger = LoggerFactory.getLogger(UserPrincipal.class);
+	private Long id;
     private String email;
     private String password;
-    private boolean active;
-    private int failedLoginAttempts;
-	
-	public UserPrincipal(User user) {
-		this.email = user.getEmail();
-		this.password = user.getPassword();
-		this.active = user.getActive();
-		this.failedLoginAttempts = user.getFailedLoginAttempts();
-		
-		authorities = new ArrayList<>();
-        user.getRoles().stream().forEach(role -> {
-            authorities.add(new SimpleGrantedAuthority(role.getRole()));
-        });
-	}
+    private Collection<? extends GrantedAuthority> authorities;
+    private Map<String, Object> attributes;
 
-	@Override
-	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return authorities;
-	}
+    public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
+        this.id = id;
+        this.email = email;
+        this.password = password;
+        this.authorities = authorities;
+    }
 
-	@Override
-	public String getPassword() {
-		return password;
-	}
+    public static UserPrincipal create(User user) {
+        List<GrantedAuthority> authorities = Collections.
+                singletonList(new SimpleGrantedAuthority("ROLE_USER"));
 
-	@Override
-	public String getUsername() {
-		return email;
-	}
+        return new UserPrincipal(
+                user.getId(),
+                user.getEmail(),
+                user.getPassword(),
+                authorities
+        );
+    }
 
-	@Override
-	public boolean isAccountNonExpired() {
-		// TODO Auto-generated method stub
-		return true;
-	}
+    public static UserPrincipal create(User user, Map<String, Object> attributes) {
+        UserPrincipal userPrincipal = UserPrincipal.create(user);
+        userPrincipal.setAttributes(attributes);
+        return userPrincipal;
+    }
 
-	@Override
-	public boolean isAccountNonLocked() {
-		return (failedLoginAttempts < 3) ? true : false;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	@Override
-	public boolean isCredentialsNonExpired() {
-		// TODO Auto-generated method stub
-		return true;
-	}
+    public String getEmail() {
+        return email;
+    }
 
-	@Override
-	public boolean isEnabled() {
-		// TODO Auto-generated method stub
-		return active;
-	}
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, Object> attributes) {
+        this.attributes = attributes;
+    }
+
+    @Override
+    public String getName() {
+        return String.valueOf(id);
+    }
 }

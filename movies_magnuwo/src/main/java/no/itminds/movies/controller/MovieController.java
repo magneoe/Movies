@@ -1,46 +1,38 @@
 package no.itminds.movies.controller;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
+import javax.validation.Valid;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.bind.annotation.RestController;
 
 import no.itminds.movies.model.Actor;
-import no.itminds.movies.model.CacheObject;
+import no.itminds.movies.model.Genre;
 import no.itminds.movies.model.Movie;
-import no.itminds.movies.model.Movie.MovieBuilder;
 import no.itminds.movies.model.Rating;
+import no.itminds.movies.model.dto.CommentDTO;
 import no.itminds.movies.model.dto.MovieDTO;
 import no.itminds.movies.model.login.User;
-import no.itminds.movies.repository.ActorRepository;
-import no.itminds.movies.repository.GenreRepository;
 import no.itminds.movies.service.MovieService;
 import no.itminds.movies.service.UserService;
+import no.itminds.movies.util.CommentAdapter;
+import no.itminds.movies.util.MovieAdapter;
 
-@Controller
-@RequestMapping("movies/")
+@RestController
+@RequestMapping("api/v1/movies/")
 public class MovieController {
 
 	final static Logger logger = LoggerFactory.getLogger(MovieController.class);
@@ -50,104 +42,71 @@ public class MovieController {
 
 	@Autowired
 	private UserService userService;
-
-	@Autowired
-	private ActorRepository actorRepository;
-
-	@Autowired
-	private GenreRepository genreRepository;
-
-	@Autowired
-	private Validator validator;
-
-	private final String CACHE_ENTRY_GENRES = "CAHCE_ENTRY_GENRES";
-	private final String CACHE_ENTRY_ACTORS = "CAHCE_ENTRY_ACTORS";
-	private static Map<String, CacheObject> cache = new HashMap<>();
-
-	@RequestMapping(value = { "/*", "index" })
-	public ModelAndView index() {
-		ModelAndView modelAndView = new ModelAndView("index");
-		modelAndView.getModel().put("movies", movieService.getAll());
-
-		User existingUser = getCurrentUser();
-		if (existingUser != null) {
-			modelAndView.addObject("user", existingUser);
-		}
-		return modelAndView;
+	
+	@GetMapping("/actors")
+	public List<Actor> getActors(){
+		return movieService.getActors();
+	}
+	
+	@GetMapping("/genres")
+	public List<Genre> getGenres(){
+		return movieService.getGenres();
 	}
 
-	@RequestMapping(value = "createMovie", method = RequestMethod.GET)
-	public ModelAndView createMovie() {
-
-		ModelAndView modelAndView = new ModelAndView("createMovie");
-		modelAndView.addObject("newMovie", new MovieDTO());
-		modelAndView.addObject("actors", getCachedItems(CACHE_ENTRY_ACTORS, actorRepository));
-		modelAndView.addObject("genres", getCachedItems(CACHE_ENTRY_GENRES, genreRepository));
-
-		return modelAndView;
-	}
-
-	@RequestMapping(value = "newMovie", method = RequestMethod.POST)
-	public ModelAndView submitNewMovie(MovieDTO newMovieDTO) {
-		
-		ModelAndView modelAndView = new ModelAndView("createMovie");
-		List<Actor> actors = getCachedItems(CACHE_ENTRY_ACTORS, actorRepository);
-		List<Object> formErrors = validateNewMovie(newMovieDTO);
+	@PostMapping(value = "create-movie")
+	public ResponseEntity<String> submitNewMovie(@Valid MovieDTO newMovieDTO, BindingResult bindingResult) {
+		List<Actor> actors = movieService.getActors();
 		
 		// If validation not approved - return
-		if (formErrors.size() > 0) {
-			modelAndView.addObject("actors", actors);
-			modelAndView.addObject("genres", getCachedItems(CACHE_ENTRY_GENRES, genreRepository));
-			modelAndView.addObject("formErrors", formErrors);
-			modelAndView.addObject("newMovie", newMovieDTO);
-			return modelAndView;
+		if (bindingResult.hasErrors()) {
+			return new ResponseEntity<>("Error in form: " + bindingResult.getFieldErrors(), HttpStatus.BAD_REQUEST);
 		}
 		// If validation approved - persist and return to details view
-		MovieBuilder builder = new MovieBuilder();
-		builder.fromMovieDTO(newMovieDTO, actors);
 		try {
-			Long id = movieService.save(builder.build());
-			modelAndView.setView(new RedirectView("details/" + id));
+			Long id = movieService.save(MovieAdapter.fromMovieDTO(newMovieDTO, actors));
+			return new ResponseEntity<>(HttpStatus.CREATED);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			logger.debug(ex.getMessage());
-			modelAndView.addObject("error", "Unable to Create new movie");
 		}
-		return modelAndView;
+		return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	@RequestMapping(value = "details/{id}", method = RequestMethod.GET)
-	public ModelAndView getDetails(@PathVariable Long id) {
-
-		ModelAndView modelAndView = new ModelAndView("details");
-		Movie existingMovie = null;
-		existingMovie = movieService.getDetails(id);
+	@GetMapping(value = "details/{id}")
+	public ResponseEntity<Movie> getDetails(@PathVariable Long id) {
+		Movie existingMovie = movieService.getDetails(id);
+		if(existingMovie == null)
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
 		Rating currentRating = movieService.getCurrentRating(getCurrentUser(), existingMovie);
-
-		modelAndView.getModel().put("movie", existingMovie);
-		modelAndView.getModel().put("currentRating", currentRating);
-		return modelAndView;
+		existingMovie.setUserRating(currentRating);
+		
+		return new ResponseEntity<>(existingMovie, HttpStatus.OK);
 	}
 
-	@RequestMapping(value = "submitComment", method = RequestMethod.POST)
-	public RedirectView submitComment(String title, String comment, long movieId) {
+	@PostMapping(value = "submit-comment")
+	public ResponseEntity<String> submitComment(@Valid CommentDTO commentDTO, BindingResult bindingResults) {
 
 		User existingUser = getCurrentUser();
 
-		if (existingUser != null) {
-			movieService.postComment(existingUser, title, comment, movieId);
+		if (existingUser != null) { 
+			if(!bindingResults.hasErrors()) {
+				movieService.postComment(existingUser, CommentAdapter.fromCommentDTO(commentDTO, existingUser, new Date()));
+				return new ResponseEntity<String>(HttpStatus.CREATED);
+			}
+			else {
+				logger.info("Unable to post new comment");
+			}
 		}
-
-		return new RedirectView("details/" + movieId);
+		return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	@RequestMapping(value = "vote", method = RequestMethod.POST)
-	public RedirectView vote(Integer rating, Long movieId) {
+	@PostMapping(value = "vote")
+	public ResponseEntity<String> vote(Integer rating, Long movieId) {
 		User existingUser = getCurrentUser();
 		movieService.vote(existingUser, movieId, rating);
 
-		return new RedirectView("details/" + movieId);
+		return new ResponseEntity<String>(HttpStatus.CREATED);
 	}
 
 	/*
@@ -155,38 +114,6 @@ public class MovieController {
 	 */
 	private User getCurrentUser() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		return userService.findByEmail(auth.getName());
-	}
-
-	private <T extends Comparable<T>> List<T> getCachedItems(final String CACHE_KEY,
-			JpaRepository<T, Long> repository) {
-		CacheObject<T> cacheObj = MovieController.cache.get(CACHE_KEY);
-
-		if (cacheObj == null || LocalDateTime.now().isAfter(cacheObj.getLastUpdated().plusMinutes(5))) {
-			List<T> cachedItems = repository.findAll();
-			Collections.sort(cachedItems);
-			cache.put(CACHE_KEY, new CacheObject<>(CACHE_KEY, cachedItems));
-			logger.info("Cached objs are being loaded again");
-			return cachedItems;
-		}
-		logger.info("Cached obj is being served from cache");
-		return cacheObj.getCacheItems();
-	}
-
-	private List<Object> validateNewMovie(MovieDTO newMovieDTO) {
-		List<Object> formErrors = new ArrayList<>();
-		// Validate dates
-		try {
-			LocalDate.parse(newMovieDTO.getCreatedDate(), DateTimeFormatter.ofPattern(MovieBuilder.DATE_PATTERN));
-			LocalDate.parse(newMovieDTO.getReleaseDate(), DateTimeFormatter.ofPattern(MovieBuilder.DATE_PATTERN));
-		} catch (Exception ex) {
-			formErrors.add("Illegal date formats");
-		}
-		Set<ConstraintViolation<MovieDTO>> violations = validator.validate(newMovieDTO);
-		List<Object> violationList = Arrays
-				.asList(violations.stream().map(violation -> violation.getMessage()).toArray());
-		formErrors.addAll(violationList);
-
-		return formErrors;
+		return userService.loadUserByEmail(auth.getName());
 	}
 }

@@ -1,12 +1,12 @@
 package no.itminds.movies.service;
 
-import javax.persistence.PersistenceException;
-
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 import no.itminds.movies.model.login.User;
 
 public interface UserService extends UserDetailsService {
-	void saveUser(User user) throws PersistenceException;
-	User findByEmail(String email);
+	public UserDetails loadUserByUsername(String email);
+	public UserDetails loadUserById(Long id);
+	public User loadUserByEmail(String email);
 }
